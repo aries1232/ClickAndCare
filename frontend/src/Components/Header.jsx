@@ -6,7 +6,7 @@ const Header = () => {
     <div>
        //left 
        <div>
-          <p>Book Appointment with <br/> Best from the Industry !</p>
+          <p>Book Appointment with a <br/> Best from the Industry !</p>
        </div>
 
        <div>
