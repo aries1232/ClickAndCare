@@ -45,20 +45,19 @@ const Doctors = () => {
         </div>
         <div className="w-full grid grid-cols-auto gap-4 gap-y-6">
           {
-            // filterDoc.map((item,index)=>(
-            //   <div>
-            //     <img src={item.image} alt="" />
-            //     <div>
-            //       <div>
-            //         <p>Available</p>
-            //       </div>
-            //       <p>{item.name}</p>
-            //       <p>{item.speciality}</p>
-            //     </div>
-            //   </div>
-            // ))
+            filterDoc.map((item,index)=>(
+              <div>
+                <img src={item.image} alt="" />
+                <div>
+                  <div>
+                    <p>Available</p>
+                  </div>
+                  <p>{item.name}</p>
+                  <p>{item.speciality}</p>
+                </div>
+              </div>
+            ))
           }
-          ajdaljlda
         </div>
       </div>
     </div>
