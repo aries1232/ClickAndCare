@@ -4,7 +4,7 @@ import { assets } from '../assets/assets.js'
 import {AppContext} from '../context/AppContext.jsx'
 import RelatedDoctors from '../Components/RelatedDoctors.jsx'
 
-//It will be imported after preaprtion of context page
+
 
 const Appointment = () => {
 
@@ -34,11 +34,7 @@ const Appointment = () => {
 
     let currentDate = new Date(today);
 
-    if(currentDate.getHours()> 19 ){
-      if(currentDate.getMinutes()>30){
-        currentDate++;
-      }
-    }
+    
 
     for(let i=0; i<7; i++){
       
