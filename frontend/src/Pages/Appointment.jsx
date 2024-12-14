@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { assets } from '../assets/assets.js'
 import {AppContext} from '../context/AppContext.jsx'
+import RelatedDoctors from '../Components/RelatedDoctors.jsx'
 
 //It will be imported after preaprtion of context page
 
@@ -29,17 +30,25 @@ const Appointment = () => {
   const getAvailableSlots = async()=>{
     setDocSlot([])
 
-    let today =new Date()
+    let today = new Date()
+
+    let currentDate = new Date(today);
+
+    if(currentDate.getHours()> 19 ){
+      if(currentDate.getMinutes()>30){
+        currentDate++;
+      }
+    }
 
     for(let i=0; i<7; i++){
-      let currentDate = new Date(today);
+      
       currentDate.setDate(today.getDate()+i);
 
       let endTime= new Date();
       endTime.setDate(today.getDate()+ i)
       endTime.setHours(20,0,0,0)
 
-      if(today.getDate() === currentDate.getDate()){
+      if(today.getDate() === currentDate.getDate() ){
         currentDate.setHours(currentDate.getHours() > 10 ? currentDate.getHours()+1 : 10)
         currentDate.setMinutes(currentDate.getMinutes()>30 ? 30: 0)
       }
@@ -151,8 +160,8 @@ const Appointment = () => {
         <button className='bg-primary text-white text-sm font-light px-14 py-3 rounded-full mt-5'>Book an Appointment</button>
       </div>
 
-      {/* Related Doctors */}
-      {/* <RelatedDoctors docId={docId} speciality={docInfo.speciality}/> */}
+      {/* Related Doctors Page Component*/}
+      <RelatedDoctors docId={docId} speciality={docInfo.speciality}/>
     </div>
   )
 }
