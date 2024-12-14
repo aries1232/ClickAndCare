@@ -10,6 +10,7 @@ import Register from "./Pages/Register";
 import Contact from './Pages/Contact'
 import MyAppointment from "./Pages/MyAppointment";
 import Navbar from "./Components/Navbar";
+import Footer from "./Components/Footer";
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/contact" element={<Contact />} /> 
       </Routes>
+      <Footer/>
     </div>
   );
 };
