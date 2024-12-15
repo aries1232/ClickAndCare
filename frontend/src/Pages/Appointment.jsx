@@ -32,6 +32,15 @@ const Appointment = () => {
 
     let today = new Date()
 
+    // The below code is written to move the date to next date if todays time is mire than 7.30
+  
+    let flag = false;
+    if (today.getHours() > 19 || (today.getHours() === 19 && today.getMinutes() > 30)) {
+      today.setDate(today.getDate() + 1); 
+      flag = true;
+    }
+    // The logic is to use a flag variable to get track if next date is thenew date
+
     let currentDate = new Date(today);
 
     
@@ -44,7 +53,13 @@ const Appointment = () => {
       endTime.setDate(today.getDate()+ i)
       endTime.setHours(20,0,0,0)
 
-      if(today.getDate() === currentDate.getDate() ){
+      //This if condition checks whether it is todays date or tommorow. If it is tommorows date then it will start new time slots from 10 am
+      if(flag){
+        currentDate.setHours(10)
+        currentDate.setMinutes(0)
+      }
+        
+      else if(today.getDate() === currentDate.getDate() ){
         currentDate.setHours(currentDate.getHours() > 10 ? currentDate.getHours()+1 : 10)
         currentDate.setMinutes(currentDate.getMinutes()>30 ? 30: 0)
       }
