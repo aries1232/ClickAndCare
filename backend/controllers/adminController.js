@@ -9,11 +9,17 @@ const addDoctor = async (req, res) => {
         const { name, email, password, speciality, degree, experience, about, fees, address } = req.body;
         const imageFile = req.file;
 
-        console.log({ name, email, password, speciality, degree, experience, about, fees, address }, imageFile);
+        //console.log({ name, email, password, speciality, degree, experience, about, fees, address }, imageFile);
 
         // Checking for all data to add doctor
         if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address) {
             return res.json({ success: false, message: "Missing Details" });
+        }
+
+        //checking duplicate doctor 
+        const checkemail = await doctorModel.findOne({email});
+        if(checkemail) {
+            return res.json({ success: false, message: "Doctor Already Exist ! Please Login :)" });
         }
 
         // Validating email
@@ -36,7 +42,10 @@ const addDoctor = async (req, res) => {
                 parsedAddress = JSON.parse(address);
             }
         } catch (error) {
-            return res.json({ success: false, message: "Invalid address format" });
+            return res.json({ 
+                success: false, 
+                message: "Invalid address format"
+             });
         }
 
         const doctorData = {
@@ -56,7 +65,12 @@ const addDoctor = async (req, res) => {
         const newDoctor = new doctorModel(doctorData);
         await newDoctor.save();
 
-        res.json({ success: true, message: "Doctor Added" });
+        res.json({ 
+            success: true, 
+            message: "Doctor Added"
+            
+         });
+         console.log("new doctor added successfully :)")
 
     } catch (error) {
         console.log(error);
@@ -65,17 +79,20 @@ const addDoctor = async (req, res) => {
 };
 
 const loginAdmin = async (req, res) => {
+    const { email, password } = req.body;
+    if(email != process.env.ADMIN_EMAIL || password != process.env.ADMIN_PASSWORD) {
+        res.json({ success: false, message: "wrong credentials!"});
+    }
     try {
-        const { email, password } = req.body;
-
-        if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+        if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
             const token = jwt.sign(email + password, process.env.JWT_SECRET);
             res.json({ success: true, token });
+            console.log(token);
         }
-
+        
     } catch (error) {
         console.log(error);
-        res.json({ success: false, message: error.message });
+        res.json({ success: false, message: error.message , message: "chud gye guru"});
     }
 };
 
