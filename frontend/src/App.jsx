@@ -11,6 +11,8 @@ import Contact from './Pages/Contact'
 import MyAppointment from "./Pages/MyAppointment";
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'
 
 const App = () => {
   return (
@@ -30,7 +32,9 @@ const App = () => {
         <Route path="/contact" element={<Contact />} /> 
 
       </Routes>
+     
       <Footer/>
+      <ToastContainer />
     </div>
   );
 };

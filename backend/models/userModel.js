@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const doctorSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -12,7 +12,7 @@ const doctorSchema = new mongoose.Schema({
   address: { type: Object, default: {line1:'', line2:''} },
   gender: { type: String, default: "Not Selected" },
   dob: { type: String, default: "Not Selected" },
-  phone: { tyep: String, default: "1234567890" },
+  phone: { type: Number, default: 1234567890 },
 });
 
 const userModel = mongoose.models.user || mongoose.model("user", userSchema);
