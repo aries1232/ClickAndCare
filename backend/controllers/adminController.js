@@ -78,6 +78,21 @@ const addDoctor = async (req, res) => {
     }
 };
 
+//api for the getting all doctors
+const allDoctors = async(req,res) => {
+        try {
+            const doctors = await doctorModel.find({}).select('-password');
+            res.json({success : true,doctors});
+            
+        } catch (error) {
+            console.log(error);
+            res.json({success:false,
+                      message:error.message,
+            }); 
+        }
+    
+}
+
 const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
     if(email != process.env.ADMIN_EMAIL || password != process.env.ADMIN_PASSWORD) {
@@ -96,4 +111,4 @@ const loginAdmin = async (req, res) => {
     }
 };
 
-export { addDoctor, loginAdmin };
+export { addDoctor, loginAdmin , allDoctors };
