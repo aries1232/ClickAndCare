@@ -43,7 +43,7 @@ const {token,setToken,userData}= useContext(AppContext)
             <div className="absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block">
                <div className="min-w-60 bg-stone-100 rounded-md flex flex-col gap-4 p-4">
                <p onClick={()=>navigate('/my-profile')} className="hover:text-black cursor-pointer">My Profile</p>
-               <p onClick={()=>navigate('/my-appointment')} className="hover:text-black cursor-pointer">My Appointments</p>
+               <p onClick={()=>navigate('/my-appointments')} className="hover:text-black cursor-pointer">My Appointments</p>
                <p onClick={logout} className="hover:text-black cursor-pointer">Logout</p>
                </div>
          </div>

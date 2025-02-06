@@ -5,12 +5,15 @@ import {AppContext} from '../context/AppContext.jsx'
 import RelatedDoctors from '../Components/RelatedDoctors.jsx'
 import { toast } from 'react-toastify'
 import axios from 'axios'
+
+ 
+
 //It will be imported after preaprtion of context page
 
 const Appointment = () => {
 
   const {docId} = useParams()
-  const {doctors ,currencySymbol ,backendUrl,token,getDoctorsData} = useContext(AppContext) //Context is not available yet. It will be made by Ashutosh
+  const {doctors ,currencySymbol ,backendUrl,token, getDoctors} = useContext(AppContext) //Context is not available yet. It will be made by Ashutosh
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const navigate =useNavigate()
 
@@ -75,10 +78,22 @@ const Appointment = () => {
       while(currentDate < endTime ){
         let formattedTime = currentDate.toLocaleTimeString([], {hour : '2-digit', minute : '2-digit'})
 
-        timeSlots.push({
-          dateTime : new Date(currentDate),
-          time : formattedTime
-        })
+        let day = currentDate.getDate();
+        let month = currentDate.getMonth()+1;
+        let year  = currentDate.getFullYear();
+
+        let slotDate = day+"_"+month+"_"+year;
+        let slotTime = formattedTime;
+
+        let isSlotAvailable = docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true;
+
+        if(isSlotAvailable){
+          timeSlots.push({
+            dateTime : new Date(currentDate),
+            time : formattedTime
+          })
+
+        }
 
         currentDate.setMinutes(currentDate.getMinutes()+30)
       }
@@ -87,6 +102,8 @@ const Appointment = () => {
     }
   }
 
+
+  // booking appointment
   const bookAppointment= async()=>{
     if(!token){
       toast.warn('Login to book appointment')
@@ -100,17 +117,21 @@ const Appointment = () => {
       let year =date.getFullYear()
        
       const slotDate=day+"_"+month+"_"+year
+
+      //console.log("before");
       const {data}=await axios.post(backendUrl+'/api/user/book-appointment',{docId,slotDate,slotTime},{headers:{token}})
-      
+       
       if(data.success){
         toast.success(data.message)
-        getDoctorsData()
-        navigate('/my-appointments')
+        getDoctors();
+        navigate('/my-appointments');
       }
       else{
+          //console.log("data nhi mila :)");
           toast.error(data.message)
       }
     } catch (error) {
+      //console.log("backend pe gya hi nhi !")
       console.log(error)
       toast.error(error.message)
     }
@@ -121,7 +142,9 @@ const Appointment = () => {
   },[doctors,docId])
 
   useEffect(()=>{
-    getAvailableSlots()
+    if(docInfo){  
+      getAvailableSlots()
+    }
   },[docInfo])
 
   useEffect(()=>{
@@ -175,7 +198,7 @@ const Appointment = () => {
         </div>
       </div>
 
-      {/*--------------Booking Slots------------*/}
+       
       <div className='sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700'>
         <p>Booking Slots</p>
         <div className='flex flex-row gap-3 items-center rounded-sm w-full mt-4'>

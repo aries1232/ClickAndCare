@@ -1,5 +1,5 @@
 import React, { useContext } from 'react'
-import { AppContext } from '../context/AppContext'
+import { AppContext } from '../context/AppContext.jsx'
 
 const MyAppointment = () => {
 
@@ -38,4 +38,4 @@ const MyAppointment = () => {
   )
 }
 
-export default MyAppointment
+export default MyAppointment;
