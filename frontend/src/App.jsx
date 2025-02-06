@@ -1,15 +1,15 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import Home from "./Pages/Home";
-import About from "./Pages/About";
-import Appointment from "./Pages/Appointment";
-import Doctors from "./Pages/Doctors";
-import MyProfile from "./Pages/MyProfile";
-import Login from "./Pages/Login";
-import Register from "./Pages/Register";
-import Contact from './Pages/Contact'
-import MyAppointment from "./Pages/MyAppointment";
-import Navbar from "./Components/Navbar";
+import About from "./Pages/About.jsx";
+import Appointment from "./Pages/Appointment.jsx";
+import Doctors from "./Pages/Doctors.jsx";
+import MyProfile from "./Pages/MyProfile.jsx";
+import Login from "./Pages/Login.jsx";
+import Register from "./Pages/Register.jsx";
+import Contact from './Pages/Contact.jsx';
+import MyAppointment from "./Pages/MyAppointment.jsx";
+import Navbar from "./Components/Navbar.jsx";
 import Footer from "./Components/Footer";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'
@@ -24,7 +24,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/appointment/:docId" element={<Appointment />} />
-        <Route path="/my-appointment" element={<MyAppointment />} />
+        <Route path="/my-appointments" element={<MyAppointment />} />
         <Route path="/doctors" element={<Doctors />} />
         <Route path="/doctors/:speciality" element={<Doctors />} />
         <Route path="/my-profile" element={<MyProfile />} />
