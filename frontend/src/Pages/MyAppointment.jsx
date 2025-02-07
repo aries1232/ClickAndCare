@@ -1,9 +1,42 @@
 import React, { useContext } from 'react'
 import { AppContext } from '../context/AppContext.jsx'
+// import axios from 'axios';
+// import { toast } from 'react-toastify';
+// import { use } from 'react';
+// import { doctors } from '../assets/assets.js';
 
 const MyAppointment = () => {
+  const  {doctors} = useContext(AppContext);
 
-  const {doctors} = useContext(AppContext)
+  // const {token, backendUrl} = useContext(AppContext);
+  // const [appointments, setAppointments] = useState([]);
+
+  // const getMyAppointments = async()=>{
+  //   try {
+  //     const {data}  = await axios.post(backendUrl + '/api/user/appointments',{headers:{token}});
+  //     if(data.success){
+  //       setAppointments(data.appointments);
+  //       console.log(data.appointments);
+         
+  //     }else {
+  //       console.log(data.message);
+  //       toast.error(data.message);
+
+  //     }
+         
+      
+  //   } catch (error) {
+  //     console.log(error);
+  //     toast.error(error.message);
+      
+  //   }
+  // }
+  // useEffect(()=>{
+  //   if(token){
+  //     getMyAppointments();
+  //   }
+  // },[token])
+
   return (
     <div>
       
