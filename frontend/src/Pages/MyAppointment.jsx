@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
+import {loadStripe} from '@stripe/stripe-js';
 
 const MyAppointment = () => {
   const { token, backendUrl, getDoctors } = useContext(AppContext);
@@ -12,6 +13,25 @@ const MyAppointment = () => {
     const dateArray = dateFormat.split('_');
     return ' ' + dateArray[0] + ' ' + months[parseInt(dateArray[1])-1] + ' ' + dateArray[2];
   }
+
+  const handlePaynow = async (appointmentId) => {
+
+    const stripe = await loadStripe(import.meta.env.VITE_STRIPE_KEY_ID);
+  
+    try {
+      const response = await axios.post(backendUrl + "/api/user/make-payment", { appointmentId }, { headers: { token } });
+  
+      if (response.data.success) {
+        await stripe.redirectToCheckout({ sessionId: response.data.sessionId });
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Payment initiation failed.");
+    }
+  };
+  
   
 
   const getMyAppointments = async () => {
@@ -93,7 +113,7 @@ const MyAppointment = () => {
                   {slotDateFormat(item.slotDate)} | {item.slotTime}
                 </p>
               </div>
-              <div className="flex flex-col gap-2 justify-end">
+              <div onClick={()=>handlePaynow(item._id)} className="flex flex-col gap-2 justify-end">
                 {!item.cancelled && <button className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300">
                   Pay Now
                 </button>}

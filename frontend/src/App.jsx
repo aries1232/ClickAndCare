@@ -13,6 +13,8 @@ import Navbar from "./Components/Navbar.jsx";
 import Footer from "./Components/Footer";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'
+import Success from "./Pages/Success.jsx";
+import Cancel from "./Pages/Cancel.jsx";
 
 const App = () => {
   return (
@@ -31,6 +33,8 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/contact" element={<Contact />} /> 
+        <Route path="/success" element={<Success />} />
+        <Route path="/cancel" element={<Cancel />} />
 
       </Routes>
      
