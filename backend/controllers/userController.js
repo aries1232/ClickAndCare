@@ -1,10 +1,13 @@
 import validator from 'validator'
 import bcrypt from 'bcrypt'
+import mongoose from 'mongoose'
 import userModel from '../models/userModel.js'
 import jwt from 'jsonwebtoken'
 import {v2 as cloudinary} from 'cloudinary'
 import doctorModel from '../models/doctorModel.js'
 import appointmentModel from '../models/appointmentModel.js'
+import Stripe from 'stripe'
+import dotenv from 'dotenv'
 //API to register user
 const registerUser=async(req,res)=>{
     try {
@@ -215,4 +218,50 @@ const cancelAppointment=async(req,res)=>{
   }
 }
 
-export {registerUser,loginUser,getProfile,updateProfile ,bookAppointment , allAppointments, cancelAppointment};
+// api to make payment 
+
+const makePayment = async (req, res) => {
+  try {
+    const { appointmentId } = req.body; 
+
+ 
+    if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
+      return res.status(400).json({ success: false, message: "Invalid appointmentId format" });
+    }
+
+    const appointmentData = await appointmentModel.findById(appointmentId);
+    if (!appointmentData) {
+      return res.status(404).json({ success: false, message: "Appointment not found" });
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET);
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'inr',
+            product_data: {
+              name: `Appointment with Dr. ${appointmentData.docData.name}`,
+            },
+            unit_amount: appointmentData.amount * 100, // Convert ₹ to paise
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: 'http://localhost:5173/success',
+      cancel_url: 'http://localhost:5173/cancel',
+    });
+
+    res.json({ success: true, sessionId: session.id });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+export {registerUser,loginUser,getProfile,updateProfile ,bookAppointment , allAppointments, cancelAppointment,makePayment};
