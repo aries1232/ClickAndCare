@@ -55,7 +55,7 @@ const MyAppointment = () => {
   const cancelAppointment = async(appointmentId) =>{
     try {
 
-      console.log(appointmentId)
+      // console.log(appointmentId)
 
       const { data } = await axios.post(backendUrl + "/api/user/cancel-appointment", {appointmentId}, {headers: { token }});
 
@@ -113,8 +113,8 @@ const MyAppointment = () => {
                   {slotDateFormat(item.slotDate)} | {item.slotTime}
                 </p>
               </div>
-              <div onClick={()=>handlePaynow(item._id)} className="flex flex-col gap-2 justify-end">
-                {!item.cancelled && <button className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300">
+              <div className="flex flex-col gap-2 justify-end">
+                {!item.cancelled && <button onClick={()=>handlePaynow(item._id)} className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300">
                   Pay Now
                 </button>}
                 {!item.cancelled && <button onClick={()=>cancelAppointment(item._id)} className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300">

@@ -218,6 +218,8 @@ const cancelAppointment=async(req,res)=>{
   }
 }
 
+
+
 // api to make payment 
 
 const makePayment = async (req, res) => {
@@ -243,9 +245,9 @@ const makePayment = async (req, res) => {
           price_data: {
             currency: 'inr',
             product_data: {
-              name: `Appointment with Dr. ${appointmentData.docData.name}`,
+              name: `Appointment with ${appointmentData.docData.name}`,
             },
-            unit_amount: appointmentData.amount * 100, // Convert ₹ to paise
+            unit_amount: appointmentData.amount * 100, 
           },
           quantity: 1,
         },
