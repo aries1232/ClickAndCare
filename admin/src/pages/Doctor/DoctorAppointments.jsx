@@ -31,6 +31,7 @@ const DoctorAppointments = () => {
           <p>Patient</p>
           <p>Payment</p>
           <p>Age</p>
+          <p>Date</p>
           <p>Fees</p>
           <p>Action</p>
         </div>

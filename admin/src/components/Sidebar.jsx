@@ -82,7 +82,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.appointment_icon} alt="Appointments" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">All Appointments</p>
+                        <p className="truncate sm:hidden md:block">Appointments</p>
                     </NavLink>
 
 

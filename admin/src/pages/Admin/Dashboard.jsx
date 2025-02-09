@@ -60,7 +60,7 @@ const Dashboard = () => {
           </div>
 
           <div className="pt-0.5 border  border-t-0 border-gray-200 rounded-sm">
-            {dashData.lastestAppointments.map((item,index) => (
+            {dashData.latestAppointments.map((item,index) => (
                 <div className="flex items-center px-6 py-3  gap-3 border-b border-gray-200   hover:bg-gray-200 " key={index}>
                   <img className=" object-center w-14 h-14 rounded-full  " src={item.docData.image} alt="" />
                   <div className="flex-1 ">
