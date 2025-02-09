@@ -171,7 +171,7 @@ const allAppointments= async(req,res)=>{
   try {
     const {userId} = req.body;
     const data = await appointmentModel.find({userId});
-    console.log(data);
+    //console.log(data);
     res.json({success:true,data});
     
   } catch (error) {
@@ -253,7 +253,7 @@ const makePayment = async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: 'http://localhost:5173/success',
+      success_url:  `http://localhost:5173/success/${appointmentId}`,
       cancel_url: 'http://localhost:5173/cancel',
     });
 
@@ -265,5 +265,22 @@ const makePayment = async (req, res) => {
   }
 };
 
+//api to update the payment status of the appointment
+const updatePaymentStatus = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
 
-export {registerUser,loginUser,getProfile,updateProfile ,bookAppointment , allAppointments, cancelAppointment,makePayment};
+    if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
+      return res.status(400).json({ success: false, message: "Invalid appointmentId format" });
+    }
+
+    await appointmentModel.findByIdAndUpdate(appointmentId, { payment: true });
+    res.json({ success: true, message: "Payment status updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+export {registerUser,loginUser,getProfile,updateProfile ,bookAppointment , allAppointments, cancelAppointment,makePayment , updatePaymentStatus};
