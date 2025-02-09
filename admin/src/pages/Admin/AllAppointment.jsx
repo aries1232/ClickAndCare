@@ -5,24 +5,11 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const AllAppointment = () => {
-  const { aToken, appointments, getAllAppointments , backendUrl} = useContext(AdminContext);
+  const { aToken, appointments, getAllAppointments ,cancelAppointment} = useContext(AdminContext);
   const { calculateAge, slotDateFormat } = useContext(AppContext);
   const currency = "₹";
 
-  const cancelAppointment = async(appointmentId) => {
-    try {
-      const {data} = await axios.post(backendUrl + '/api/admin/cancel-appointment',{appointmentId}, {headers:{aToken}})
-      if(data.success){
-        toast.success(data.message);
-        getAllAppointments();
-      }else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
-
-  }
+  
 
 
   useEffect(() => {
