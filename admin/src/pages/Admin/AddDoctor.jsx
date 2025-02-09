@@ -107,7 +107,7 @@ const AddDoctor = () => {
           <div>
             <p className="text-lg font-medium text-black">Speciality</p>
             <select onChange={(event) => setSpeciality(event.target.value)}  value={speciality} className="w-full border border-gray-400 rounded-md mt-1 px-3 py-2 outline-none focus:border-primary">
-              <option value="General physician">General physician</option>
+              <option value="General Physician">General Physician</option>
               <option value="Dermatologist">Dermatologist</option>
               <option value="Pediatricians">Pediatricians</option>
               <option value="Neurologist">Neurologist</option>
