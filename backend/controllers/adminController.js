@@ -73,7 +73,7 @@ const addDoctor = async (req, res) => {
             message: "Doctor Added"
             
          });
-         console.log("new doctor added successfully :)")
+        //  console.log("new doctor added successfully :)")
 
     } catch (error) {
         console.log(error);
@@ -105,7 +105,7 @@ const loginAdmin = async (req, res) => {
         if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
             const token = jwt.sign(email + password, process.env.JWT_SECRET);
             res.json({ success: true, token });
-            console.log(token);
+            // console.log(token);
         }
         
     } catch (error) {
@@ -174,7 +174,7 @@ const appointmentCancel =async(req,res)=>{
             doctors: doctors.length,
             patients: users.length,
             appointments: appointment.length,
-            lastestAppointments: appointment.reverse().slice(0, 5),
+            latestAppointments: appointment.reverse().slice(0, 5),
             };
             res.json({success:true,dashData})
             

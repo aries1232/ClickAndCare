@@ -14,13 +14,13 @@ const Login = () => {
 
     const [email,setEmail] = useState('');
     const [password,setPassword] = useState('');
-    console.log("Backend URL: ", backendUrl);
+    // console.log("Backend URL: ", backendUrl);
 
 
     const onSubmitHandler =  async(e) => {
         e.preventDefault();
-        console.log(email);
-        console.log(password);
+        // console.log(email);
+        // console.log(password);
 
         try{
             if(state === 'Admin') {
@@ -32,7 +32,7 @@ const Login = () => {
                 }
                 else {
                      toast.error(data.message);
-                    console.log(data.message , "Login Failed");
+                    // console.log(data.message , "Login Failed");
                     
                 }
 
@@ -40,13 +40,13 @@ const Login = () => {
                 //Doctor Login Logic
                 const {data} = await axios.post(backendUrl + '/api/doctor/login', {email,password});
                 if(data.success) {
-                    console.log(data.token);
+                    // console.log(data.token);
                     localStorage.setItem('dToken',data.token)
                     setDToken(data.token);
                 }
                 else {
                      toast.error(data.message);
-                    console.log(data.message , "Login Failed");
+                    // console.log(data.message , "Login Failed");
                     
                 }
                 

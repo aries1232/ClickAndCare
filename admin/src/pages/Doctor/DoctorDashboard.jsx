@@ -25,7 +25,7 @@ const DoctorDashboard = () => {
             <img className="w-14" src={assets.earning_icon} alt="" />
             <div>
               <p className="text-xl  text-gray-600  font-bold">
-                {dashData.earning}
+                {dashData.earnings}
               </p>
               <p className="text-sm text-gray-600">Earning</p>
             </div>
