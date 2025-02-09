@@ -14,6 +14,7 @@ import { DoctorContext } from './context/DoctorContext.jsx';
 import DoctorProfile from './pages/Doctor/DoctorProfile.jsx';
 import DoctorAppointments from './pages/Doctor/DoctorAppointments.jsx';
 import DoctorDashboard from './pages/Doctor/DoctorDashboard.jsx'
+import { Navigate } from 'react-router-dom';
  
  
 
@@ -28,8 +29,11 @@ const App = () => {
       <div className='flex items-start'>
         <SideBar/>
         <Routes>
+        <Route
+            path="/"
+            element={aToken ? <Navigate to="/dashboard" /> : dToken ? <Navigate to="/doctor-dashboard" /> : <Navigate to="/login" />}
+          />
           {/* Admin Routes */}
-          <Route path='/' element={<Dashboard/>}/>
           <Route path='/add-doctor' element={<AddDoctor/>}/>
           <Route path='/dashboard' element={<Dashboard/>}/>
           <Route path='/doctor-list' element={<DoctorList/>}/>
