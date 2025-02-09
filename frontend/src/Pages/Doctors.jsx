@@ -24,13 +24,13 @@ const Doctors = () => {
     }
   }, [doctors, selectedSpeciality]);
 
-  const handleSpecialityClick = (specialty) => {
-    if (specialty === selectedSpeciality) {
+  const handleSpecialityClick = (speciality) => {
+    if (speciality === selectedSpeciality) {
       setSelectedSpeciality("");
       navigate("/doctors");
     } else {
-      setSelectedSpeciality(specialty);
-      navigate(`/doctors/${specialty}`);
+      setSelectedSpeciality(speciality);
+      navigate(`/doctors/${speciality}`);
     }
   };
 
@@ -39,15 +39,15 @@ const Doctors = () => {
       <p className="text-gray-600">Browse through the doctors specialist.</p>
       <div className="flex flex-col sm:flex-row items-start gap-5 mt-5">
         <div className="flex flex-col gap-4 text-sm text-gray-600">
-          {["General physician", "Gynecologist", "Dermatologist", "Pediatricians", "Neurologist", "Gastroenterologist"].map((specialty) => (
+          {["General Physician", "Gynecologist", "Dermatologist", "Pediatricians", "Neurologist", "Gastroenterologist"].map((speciality) => (
             <p
-              key={specialty}
-              onClick={() => handleSpecialityClick(specialty)}
+              key={speciality}
+              onClick={() => handleSpecialityClick(speciality)}
               className={`w-94vw sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${
-                selectedSpeciality === specialty ? "bg-primary text-white" : ""
+                selectedSpeciality === speciality ? "bg-primary text-white" : ""
               }`}
             >
-              {specialty}
+              {speciality}
             </p>
           ))}
         </div>
