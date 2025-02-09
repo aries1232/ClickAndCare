@@ -16,7 +16,7 @@ const doctorSchema = new mongoose.Schema({
     slots_booked: {type:Object, default:{}},
 },{minimize:false})
 
-const doctorModel =mongoose.models.doctor || mongoose.model('doctor',doctorSchema);
+const doctorModel = mongoose.models.doctor || mongoose.model('doctor',doctorSchema);
 
 
 export default doctorModel;
