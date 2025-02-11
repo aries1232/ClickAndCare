@@ -23,15 +23,17 @@ const Navbar = () => {
 
   return (
     <div className="flex items-center justify-between px-4 sm:px-10 py-3 border-b border-gray-500">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1">
         <img
-          className="w-12 sm:w-20 md:w-24 lg:w-28 xl:w-32 max-w-full h-auto cursor-pointer"
+          className="w-32 sm:w-40 md:w-44 lg:w-48 xl:w-52 max-w-full h-auto cursor-pointer"
           src={assets.logo}
           alt="Logo"
         />
-        <div className="border border-gray-500 px-3 py-1 rounded-full text-sm">
-          {aToken ? <p>admin</p> : <p>doctor</p>}
-        </div>
+        <div className="border border-gray-400 px-2 py-0.5 rounded-full text-[10px] leading-none">
+  {aToken ? <p>admin</p> : <p>doctor</p>}
+</div>
+
+        
       </div>
 
       <button
