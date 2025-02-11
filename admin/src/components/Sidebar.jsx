@@ -10,8 +10,8 @@ const Sidebar = () => {
 
     return (
         <div className="h-screen bg-gray-50 border-r p-2 flex flex-col flex-none overflow-hidden 
-                        w-[250px] min-w-[250px] max-w-[250px] md:w-[180px] md:min-w-[180px] 
-                        sm:w-[60px] sm:min-w-[60px] transition-all duration-300">
+                        w-[60px] min-w-[60px] max-w-[60px] md:w-[210px] md:min-w-[210px] 
+                        sm:w-[180px] sm:min-w-[180px] transition-all duration-300">
             
             {aToken && (
                 <ul className="space-y-1">
@@ -23,7 +23,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.home_icon} alt="Dashboard" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">Dashboard</p>
+                        <p className="truncate hidden sm:block">Dashboard</p>
                     </NavLink>
 
                     <NavLink 
@@ -34,7 +34,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.appointment_icon} alt="Appointments" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">Appointments</p>
+                        <p className="truncate hidden sm:block">Appointments</p>
                     </NavLink>
 
                     <NavLink 
@@ -45,7 +45,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.add_icon} alt="Add Doctor" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">Add Doctor</p>
+                        <p className="truncate hidden sm:block">Add Doctor</p>
                     </NavLink>
 
                     <NavLink 
@@ -56,7 +56,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.people_icon} alt="All Doctors" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">All Doctors</p>
+                        <p className="truncate hidden sm:block">All Doctors</p>
                     </NavLink>
                 </ul>
             )}
@@ -71,7 +71,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.home_icon} alt="Dashboard" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">Dashboard</p>
+                        <p className="truncate hidden md:block">Dashboard</p>
                     </NavLink>
 
                     <NavLink 
@@ -82,7 +82,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.appointment_icon} alt="Appointments" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">Appointments</p>
+                        <p className="truncate hidden md:block">Appointments</p>
                     </NavLink>
 
 
@@ -94,7 +94,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.people_icon} alt="Profile" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate sm:hidden md:block">Profile</p>
+                        <p className="truncate hidden md:block">Profile</p>
                     </NavLink>
                 </ul>
             )}
