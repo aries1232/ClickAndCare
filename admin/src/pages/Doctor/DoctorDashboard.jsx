@@ -74,8 +74,7 @@ const DoctorDashboard = () => {
                     {item.userData.name}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {" "}
-                    {slotDateFormat(item.slotDate)}
+                    {slotDateFormat(item.slotDate)}, {item.slotTime}
                   </p>
                 </div>
                 {item.cancelled ? (
