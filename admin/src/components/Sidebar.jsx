@@ -71,7 +71,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.home_icon} alt="Dashboard" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate hidden md:block">Dashboard</p>
+                        <p className="truncate hidden sm:block">Dashboard</p>
                     </NavLink>
 
                     <NavLink 
@@ -82,7 +82,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.appointment_icon} alt="Appointments" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate hidden md:block">Appointments</p>
+                        <p className="truncate hidden sm:block">Appointments</p>
                     </NavLink>
 
 
@@ -94,7 +94,7 @@ const Sidebar = () => {
                         }
                     >
                         <img src={assets.people_icon} alt="Profile" className="w-6 h-6 flex-shrink-0" />
-                        <p className="truncate hidden md:block">Profile</p>
+                        <p className="truncate hidden sm:block">Profile</p>
                     </NavLink>
                 </ul>
             )}
