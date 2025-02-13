@@ -21,6 +21,7 @@ const Doctors = () => {
   useEffect(() => {
     if (doctors) {
       applyfilter();
+      console.log(doctors);
     }
   }, [doctors, selectedSpeciality]);
 
@@ -60,9 +61,9 @@ const Doctors = () => {
             >
               <img className="bg-blue-50" src={doctor.image} alt="" />
               <div className="p-4">
-                <div className="flex items-center gap-2 text-sm text-center text-green-500 ">
-                  <p className="w-2 h-2 bg-green-500 rounded-full"></p>
-                  <p>Available</p>
+                <div className="flex items-center   text-sm text-center ">
+                  <p className=""></p>
+                  <p>{doctor.available ? <span className="text-green-500">Available</span> : <span className="text-red-500">Not Available</span> }</p>
                 </div>
                 <p className="text-gray-900 text-lg font-medium">{doctor.name}</p>
                 <p className="text-gray-600 text-sm">{doctor.speciality}</p>
