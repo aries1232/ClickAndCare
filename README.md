@@ -1,7 +1,33 @@
-Website : https://click-and-care.onrender.com/
-Preview(Demo) : https://drive.google.com/file/d/1TF8maPpVmHNe7fimOnMwRH7kRJUskbMU/view?pli=1
+**Website :** https://click-and-care.onrender.com/
+
+**Preview(Demo) :** https://drive.google.com/file/d/1TF8maPpVmHNe7fimOnMwRH7kRJUskbMU/view?pli=1
+
+**ScreenShots**
+
+
+HomePage : 
+![image](https://github.com/user-attachments/assets/a7b24801-068c-4b06-b60d-b392aca2ffe2)
+
+My appointments :  
+![image](https://github.com/user-attachments/assets/f2fae583-1f06-4671-88a5-f5f297d20058)
+All Doctors : 
+![image](https://github.com/user-attachments/assets/708da8de-cbd2-4f59-bae8-7d7431944b1d)
+
+Payment Gateway :
+![image](https://github.com/user-attachments/assets/d01a597e-a945-430b-b084-b1230f94ed63)
+
+
+Admin DashBoard : 
+![image](https://github.com/user-attachments/assets/b80bc2ea-6806-43b0-98ac-4e4da09e3cf7)
+
+
+Doctor Panel :  
+![image](https://github.com/user-attachments/assets/dd45ad61-50bb-4b46-9acc-209e6598f3f6)
  
-# ClickAndCare
+
+
+ 
+**# ClickAndCare**
 Frontend 
 
 ClickAndCare is a seamless doctor appointment booking platform designed to make healthcare access easy and hassle-free. With just a few clicks, patients can browse verified doctors, check availability, and schedule appointments at their convenience. Our goal is to bridge the gap between patients and healthcare professionals, ensuring a smooth and reliable experience for everyone.
