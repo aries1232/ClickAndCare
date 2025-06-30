@@ -1,15 +1,18 @@
-import validator from 'validator'
-import bcrypt from 'bcrypt'
-import mongoose from 'mongoose'
-import userModel from '../models/userModel.js'
-import jwt from 'jsonwebtoken'
-import {v2 as cloudinary} from 'cloudinary'
-import doctorModel from '../models/doctorModel.js'
-import appointmentModel from '../models/appointmentModel.js'
-import Stripe from 'stripe'
-import dotenv from 'dotenv'
-import crypto from 'crypto'
-import { sendOTPEmail, sendAppointmentConfirmation } from '../utils/emailService.js'
+import validator from "validator";
+import bcrypt from "bcrypt";
+import mongoose from "mongoose";
+import userModel from "../models/userModel.js";
+import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
+import doctorModel from "../models/doctorModel.js";
+import appointmentModel from "../models/appointmentModel.js";
+import Stripe from "stripe";
+import dotenv from "dotenv";
+import crypto from "crypto";
+import {
+  sendOTPEmail,
+  sendAppointmentConfirmation,
+} from "../utils/emailService.js";
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -20,23 +23,29 @@ const generateOTP = () => {
 const registerUser = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
-    
+
     if (!name || !password || !email || !phone) {
       return res.json({ success: false, message: "Missing Details" });
     }
-    
+
     if (!validator.isEmail(email)) {
       return res.json({ success: false, message: "Enter a valid email" });
     }
-    
+
     if (password.length < 8) {
-      return res.json({ success: false, message: "Enter a strong password (minimum 8 characters)" });
+      return res.json({
+        success: false,
+        message: "Enter a strong password (minimum 8 characters)",
+      });
     }
 
     // Check if user already exists
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
-      return res.json({ success: false, message: "User with this email already exists" });
+      return res.json({
+        success: false,
+        message: "User with this email already exists",
+      });
     }
 
     // Generate OTP
@@ -54,7 +63,7 @@ const registerUser = async (req, res) => {
       phone,
       password: hashedPassword,
       otp,
-      otpExpiry
+      otpExpiry,
     };
 
     const newUser = new userModel(userData);
@@ -62,22 +71,22 @@ const registerUser = async (req, res) => {
 
     // Send OTP email
     const emailSent = await sendOTPEmail(email, otp, name);
-    
+
     if (emailSent) {
       res.json({
         success: true,
-        message: "OTP sent to your email. Please check your inbox and verify your email.",
-        userId: newUser._id
+        message:
+          "OTP sent to your email. Please check your inbox and verify your email.",
+        userId: newUser._id,
       });
     } else {
       // If email fails, delete the user
       await userModel.findByIdAndDelete(newUser._id);
       res.json({
         success: false,
-        message: "Failed to send OTP. Please try again."
+        message: "Failed to send OTP. Please try again.",
       });
     }
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -88,7 +97,7 @@ const registerUser = async (req, res) => {
 const verifyOTP = async (req, res) => {
   try {
     const { userId, otp } = req.body;
-    
+
     if (!userId || !otp) {
       return res.json({ success: false, message: "Missing Details" });
     }
@@ -107,25 +116,27 @@ const verifyOTP = async (req, res) => {
     }
 
     if (new Date() > user.otpExpiry) {
-      return res.json({ success: false, message: "OTP has expired. Please request a new one." });
+      return res.json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
     }
 
     // Mark user as verified and clear OTP
     await userModel.findByIdAndUpdate(userId, {
       isVerified: true,
       otp: undefined,
-      otpExpiry: undefined
+      otpExpiry: undefined,
     });
 
     // Generate JWT token
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
-    
+
     res.json({
       success: true,
       token,
-      message: "Email verified successfully! You can now login."
+      message: "Email verified successfully! You can now login.",
     });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -136,7 +147,7 @@ const verifyOTP = async (req, res) => {
 const resendOTP = async (req, res) => {
   try {
     const { userId } = req.body;
-    
+
     if (!userId) {
       return res.json({ success: false, message: "Missing User ID" });
     }
@@ -157,24 +168,23 @@ const resendOTP = async (req, res) => {
     // Update user with new OTP
     await userModel.findByIdAndUpdate(userId, {
       otp,
-      otpExpiry
+      otpExpiry,
     });
 
     // Send new OTP email
     const emailSent = await sendOTPEmail(user.email, otp, user.name);
-    
+
     if (emailSent) {
       res.json({
         success: true,
-        message: "New OTP sent to your email. Please check your inbox."
+        message: "New OTP sent to your email. Please check your inbox.",
       });
     } else {
       res.json({
         success: false,
-        message: "Failed to send OTP. Please try again."
+        message: "Failed to send OTP. Please try again.",
       });
     }
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -190,20 +200,23 @@ const loginUser = async (req, res) => {
     if (!validator.isEmail(email)) {
       return res.json({ success: false, message: "Enter a valid email" });
     }
-      
+
     if (password.length < 8) {
       return res.json({ success: false, message: "Password is Too Small" });
     }
-    
+
     const user = await userModel.findOne({ email });
-     
+
     if (!user) {
-      return res.json({ success: false, message: 'User does not exist' });
+      return res.json({ success: false, message: "User does not exist" });
     }
 
     // Check if email is verified
     if (!user.isVerified) {
-      return res.json({ success: false, message: 'Please verify your email before logging in' });
+      return res.json({
+        success: false,
+        message: "Please verify your email before logging in",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -214,203 +227,205 @@ const loginUser = async (req, res) => {
     } else {
       res.json({ success: false, message: "Invalid Credentials" });
     }
-        
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}
+};
 
 //APi to get User profile data
 
-const getProfile =async(req,res)=>{
+const getProfile = async (req, res) => {
   try {
-    const { userId}=req.body
-    const userData= await userModel.findById(userId).select('-password')
-    res.json({success:true,userData})
+    const { userId } = req.body;
+    const userData = await userModel.findById(userId).select("-password");
+    res.json({ success: true, userData });
   } catch (error) {
-    console.log(error)
-    res.json({success:false,message:error.message})
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
-}
+};
 
 //api to update user info
 
-const updateProfile=async(req,res)=>{
+const updateProfile = async (req, res) => {
   try {
-    const {userId,name,phone,address,dob,gender}=req.body
-    const imageFile=req.file
-    if(!name|| !phone || !address || !dob ||!gender )
-    {
-      return res.json({success:false,message:"Data Missing"})
+    const { userId, name, phone, address, dob, gender } = req.body;
+    const imageFile = req.file;
+    if (!name || !phone || !address || !dob || !gender) {
+      return res.json({ success: false, message: "Data Missing" });
     }
 
-    await userModel.findByIdAndUpdate(userId,{name,phone,address:JSON.parse(address),dob,gender})
-    if(imageFile){
-        const imageUpload=await cloudinary.uploader.upload(imageFile.path,{resource_type:'image'})
-        const imageURL=imageUpload.secure_url
+    await userModel.findByIdAndUpdate(userId, {
+      name,
+      phone,
+      address: JSON.parse(address),
+      dob,
+      gender,
+    });
+    if (imageFile) {
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      const imageURL = imageUpload.secure_url;
 
-        await userModel.findByIdAndUpdate(userId,{image:imageURL})
+      await userModel.findByIdAndUpdate(userId, { image: imageURL });
     }
-    res.json({success:true,message:"Profile Updated"})
+    res.json({ success: true, message: "Profile Updated" });
   } catch (error) {
-    console.log(error)
-    res.json({success:false,message:error.message})
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
-}
+};
 //Api to book appointment
-const bookAppointment=async(req,res)=>{
+const bookAppointment = async (req, res) => {
   try {
-    const {userId,docId,slotDate,slotTime}=req.body
-    
+    const { userId, docId, slotDate, slotTime } = req.body;
+
     // Check if user is verified
-    const user = await userModel.findById(userId)
+    const user = await userModel.findById(userId);
     if (!user.isVerified) {
-      return res.json({success:false,message:"Please verify your email before booking appointments"})
-    }
-    
-    const docData= await doctorModel.findById(docId).select('-password')
-    if(!docData.available){
-      return res.json({success:false,message:"Doctor Not Available"})
-    }
-  let slots_booked=docData.slots_booked
-  if(slots_booked[slotDate]){
-    if(slots_booked[slotDate].includes(slotTime)){
-      return res.json({success:false,message:"Slot Not Available"})
-    }
-    else{
-      slots_booked[slotDate].push(slotTime)
+      return res.json({
+        success: false,
+        message: "Please verify your email before booking appointments",
+      });
     }
 
-    
-  }else{
-    slots_booked[slotDate]=[]
-    slots_booked[slotDate].push(slotTime)
-  }
-   const userData= await userModel.findById(userId).select('-password')
-   delete docData.slots_booked
-   const appointmentData={
-     userId,
-     docId,
-     slotDate,
-     slotTime,
-     userData,
-     docData,
-     amount:docData.fees,
-     date:Date.now()
-   }
-   const newAppointment = new appointmentModel(appointmentData)
-    await newAppointment.save()
+    const docData = await doctorModel.findById(docId).select("-password");
+    if (!docData.available) {
+      return res.json({ success: false, message: "Doctor Not Available" });
+    }
+    let slots_booked = docData.slots_booked;
+    if (slots_booked[slotDate]) {
+      if (slots_booked[slotDate].includes(slotTime)) {
+        return res.json({ success: false, message: "Slot Not Available" });
+      } else {
+        slots_booked[slotDate].push(slotTime);
+      }
+    } else {
+      slots_booked[slotDate] = [];
+      slots_booked[slotDate].push(slotTime);
+    }
+    const userData = await userModel.findById(userId).select("-password");
+    delete docData.slots_booked;
+    const appointmentData = {
+      userId,
+      docId,
+      slotDate,
+      slotTime,
+      userData,
+      docData,
+      amount: docData.fees,
+      date: Date.now(),
+    };
+    const newAppointment = new appointmentModel(appointmentData);
+    await newAppointment.save();
     //save new slots data in docData
-    await doctorModel.findByIdAndUpdate(docId,{slots_booked})
-    
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
     // Send confirmation email
-    await sendAppointmentConfirmation(userData.email, appointmentData, userData.name)
-    
-    res.json({success:true,message:"Appointment Booked"})
+    await sendAppointmentConfirmation(
+      userData.email,
+      appointmentData,
+      userData.name
+    );
 
-
+    res.json({ success: true, message: "Appointment Booked" });
   } catch (error) {
-    console.log(error)
-    res.json({success:false,message:error.message})
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
-}
+};
 
 //api to get appointments for the user
-const allAppointments= async(req,res)=>{
-  
+const allAppointments = async (req, res) => {
   try {
-    const {userId} = req.body;
-    const data = await appointmentModel.find({userId});
+    const { userId } = req.body;
+    const data = await appointmentModel.find({ userId });
     //console.log(data);
-    res.json({success:true,data});
-    
+    res.json({ success: true, data });
   } catch (error) {
-    console.log(error)
-    res.json({success:false,message:error.message})
-    
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
-
-}
+};
 
 //api to cancel user appointment
 
-const cancelAppointment=async(req,res)=>{
+const cancelAppointment = async (req, res) => {
   try {
-
-    const {userId, appointmentId} = req.body;
+    const { userId, appointmentId } = req.body;
     const appointmentData = await appointmentModel.findById(appointmentId);
 
-    if(appointmentData.userId!==userId){
-      return res.json({sucess:false,message:"Unauthorized action"})
+    if (appointmentData.userId !== userId) {
+      return res.json({ sucess: false, message: "Unauthorized action" });
     }
 
-    await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true})
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      cancelled: true,
+    });
 
-    const {docId,slotDate,slotTime}=appointmentData;
+    const { docId, slotDate, slotTime } = appointmentData;
 
-    const doctorData= await doctorModel.findById(docId);
+    const doctorData = await doctorModel.findById(docId);
 
-    const slots_booked=doctorData.slots_booked;
-    slots_booked[slotDate]=slots_booked[slotDate].filter(e=>e!==slotTime);
+    const slots_booked = doctorData.slots_booked;
+    slots_booked[slotDate] = slots_booked[slotDate].filter(
+      (e) => e !== slotTime
+    );
 
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
-    await doctorModel.findByIdAndUpdate(docId,{slots_booked});
-
-    
-    res.json({success:true,message:"Appointment Cancelled Successfully!"})
-    
+    res.json({ success: true, message: "Appointment Cancelled Successfully!" });
   } catch (error) {
-    
     console.log("kyu nhi ho rhi padhai");
-    console.log(error)
-    res.json({success:false,message:error.message})
-    
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
-}
+};
 
-
-
-// api to make payment 
+// api to make payment
 
 const makePayment = async (req, res) => {
   try {
-    const { appointmentId } = req.body; 
+    const { appointmentId } = req.body;
 
- 
     if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
-      return res.status(400).json({ success: false, message: "Invalid appointmentId format" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid appointmentId format" });
     }
 
     const appointmentData = await appointmentModel.findById(appointmentId);
     if (!appointmentData) {
-      return res.status(404).json({ success: false, message: "Appointment not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Appointment not found" });
     }
 
     const stripe = new Stripe(process.env.STRIPE_SECRET);
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: 'inr',
+            currency: "inr",
             product_data: {
               name: `Appointment with ${appointmentData.docData.name}`,
             },
-            unit_amount: appointmentData.amount * 100, 
+            unit_amount: appointmentData.amount * 100,
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
-    
-      success_url:  `http://localhost:4001/success/${appointmentId}`,
-      cancel_url: 'http://localhost:4001/cancel',
+      mode: "payment",
+
+      success_url: `${process.env.FRONTEND_URL}/success/${appointmentId}`,
+      cancel_url: `${process.env.FRONTEND_URL}/cancel`,
     });
 
     res.json({ success: true, sessionId: session.id });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
@@ -423,7 +438,9 @@ const updatePaymentStatus = async (req, res) => {
     const { appointmentId } = req.body;
 
     if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
-      return res.status(400).json({ success: false, message: "Invalid appointmentId format" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid appointmentId format" });
     }
 
     await appointmentModel.findByIdAndUpdate(appointmentId, { payment: true });
@@ -433,6 +450,16 @@ const updatePaymentStatus = async (req, res) => {
   }
 };
 
-
-
-export {registerUser, loginUser, verifyOTP, resendOTP, getProfile, updateProfile, bookAppointment, allAppointments, cancelAppointment, makePayment, updatePaymentStatus};
+export {
+  registerUser,
+  loginUser,
+  verifyOTP,
+  resendOTP,
+  getProfile,
+  updateProfile,
+  bookAppointment,
+  allAppointments,
+  cancelAppointment,
+  makePayment,
+  updatePaymentStatus,
+};
