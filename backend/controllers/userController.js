@@ -8,77 +8,217 @@ import doctorModel from '../models/doctorModel.js'
 import appointmentModel from '../models/appointmentModel.js'
 import Stripe from 'stripe'
 import dotenv from 'dotenv'
-//API to register user
-const registerUser=async(req,res)=>{
-    try {
-        const{name ,email ,password}= req.body
-      if(!name || !password || !email){
-        return res.json({success:false,message:"Missing Details"})
-      }
-      if(!validator.isEmail(email)){
-        return res.json({success:false ,message:"enter a valid email"})
-      }
-        
-      if(password.length<8){
-        return res.json({success:false ,message:"enter a strong password"})
-      }
+import crypto from 'crypto'
+import { sendOTPEmail, sendAppointmentConfirmation } from '../utils/emailService.js'
+
+// Generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+//API to register user (Step 1: Send OTP)
+const registerUser = async (req, res) => {
+  try {
+    const { name, email, phone, password } = req.body;
+    
+    if (!name || !password || !email || !phone) {
+      return res.json({ success: false, message: "Missing Details" });
+    }
+    
+    if (!validator.isEmail(email)) {
+      return res.json({ success: false, message: "Enter a valid email" });
+    }
+    
+    if (password.length < 8) {
+      return res.json({ success: false, message: "Enter a strong password (minimum 8 characters)" });
+    }
+
+    // Check if user already exists
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.json({ success: false, message: "User with this email already exists" });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user with OTP
+    const userData = {
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      otp,
+      otpExpiry
+    };
+
+    const newUser = new userModel(userData);
+    await newUser.save();
+
+    // Send OTP email
+    const emailSent = await sendOTPEmail(email, otp, name);
+    
+    if (emailSent) {
+      res.json({
+        success: true,
+        message: "OTP sent to your email. Please check your inbox and verify your email.",
+        userId: newUser._id
+      });
+    } else {
+      // If email fails, delete the user
+      await userModel.findByIdAndDelete(newUser._id);
+      res.json({
+        success: false,
+        message: "Failed to send OTP. Please try again."
+      });
+    }
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+//API to verify OTP (Step 2: Verify OTP)
+const verifyOTP = async (req, res) => {
+  try {
+    const { userId, otp } = req.body;
+    
+    if (!userId || !otp) {
+      return res.json({ success: false, message: "Missing Details" });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.json({ success: false, message: "Email already verified" });
+    }
+
+    if (user.otp !== otp) {
+      return res.json({ success: false, message: "Invalid OTP" });
+    }
+
+    if (new Date() > user.otpExpiry) {
+      return res.json({ success: false, message: "OTP has expired. Please request a new one." });
+    }
+
+    // Mark user as verified and clear OTP
+    await userModel.findByIdAndUpdate(userId, {
+      isVerified: true,
+      otp: undefined,
+      otpExpiry: undefined
+    });
+
+    // Generate JWT token
+    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
+    
+    res.json({
+      success: true,
+      token,
+      message: "Email verified successfully! You can now login."
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+//API to resend OTP
+const resendOTP = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.json({ success: false, message: "Missing User ID" });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.json({ success: false, message: "Email already verified" });
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Update user with new OTP
+    await userModel.findByIdAndUpdate(userId, {
+      otp,
+      otpExpiry
+    });
+
+    // Send new OTP email
+    const emailSent = await sendOTPEmail(user.email, otp, user.name);
+    
+    if (emailSent) {
+      res.json({
+        success: true,
+        message: "New OTP sent to your email. Please check your inbox."
+      });
+    } else {
+      res.json({
+        success: false,
+        message: "Failed to send OTP. Please try again."
+      });
+    }
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email) {
+      return res.json({ success: false, message: "Enter Your Email Please" });
+    }
+    if (!validator.isEmail(email)) {
+      return res.json({ success: false, message: "Enter a valid email" });
+    }
+      
+    if (password.length < 8) {
+      return res.json({ success: false, message: "Password is Too Small" });
+    }
+    
+    const user = await userModel.findOne({ email });
      
-      const salt = await bcrypt.genSalt(10)
-      const hashedPassword =await bcrypt.hash(password,salt)
-
-      const userData={
-        name,
-        email,
-        password: hashedPassword
-      }
-
-      const newUser =new userModel(userData)
-      const user =await newUser.save()
-
-      const token =jwt.sign({id:user._id},process.env.JWT_SECRET)
-      res.json({success:true,token})
- 
-    } catch (error) {
-        console.log(error)
-        res.json({success:false,message:error.message})
-        
+    if (!user) {
+      return res.json({ success: false, message: 'User does not exist' });
     }
-}
 
-const loginUser=async(req,res)=>{
-    try {
-        const {email,password}=req.body
-        if(!email)
-        {
-          return res.json({success:false ,message:"Enter Your Email Please"})
-        }
-        if(!validator.isEmail(email)){
-          return res.json({success:false ,message:"Enter a valid email"})
-        }
-          
-        if(password.length<8){
-          return res.json({success:false ,message:"Password is Too Small"})
-        }
-        const user =await userModel.findOne({email})
-         
-        if(!user){
-           return res.json({success: false,message:'User does not exist'})
-        }
-        const isMatch=await bcrypt.compare(password,user.password)
-        if(isMatch){
-            const token =jwt.sign({id:user._id},process.env.JWT_SECRET)
-            res.json({success:true,token})
-            console.log("login occured")
-        }
-        else{
-            res.json({success:false,message:"Invalid Credentials"})
-        }
-        
-    } catch (error) {
-        console.log(error)
-        res.json({success:false,message:error.message})
-        
+    // Check if email is verified
+    if (!user.isVerified) {
+      return res.json({ success: false, message: 'Please verify your email before logging in' });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      res.json({ success: true, token });
+      console.log("login occurred");
+    } else {
+      res.json({ success: false, message: "Invalid Credentials" });
+    }
+        
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
 }
 
 //APi to get User profile data
@@ -122,6 +262,13 @@ const updateProfile=async(req,res)=>{
 const bookAppointment=async(req,res)=>{
   try {
     const {userId,docId,slotDate,slotTime}=req.body
+    
+    // Check if user is verified
+    const user = await userModel.findById(userId)
+    if (!user.isVerified) {
+      return res.json({success:false,message:"Please verify your email before booking appointments"})
+    }
+    
     const docData= await doctorModel.findById(docId).select('-password')
     if(!docData.available){
       return res.json({success:false,message:"Doctor Not Available"})
@@ -156,6 +303,10 @@ const bookAppointment=async(req,res)=>{
     await newAppointment.save()
     //save new slots data in docData
     await doctorModel.findByIdAndUpdate(docId,{slots_booked})
+    
+    // Send confirmation email
+    await sendAppointmentConfirmation(userData.email, appointmentData, userData.name)
+    
     res.json({success:true,message:"Appointment Booked"})
 
 
@@ -253,8 +404,9 @@ const makePayment = async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url:  `http://localhost:5173/success/${appointmentId}`,
-      cancel_url: 'http://localhost:5173/cancel',
+    
+      success_url:  `http://localhost:4001/success/${appointmentId}`,
+      cancel_url: 'http://localhost:4001/cancel',
     });
 
     res.json({ success: true, sessionId: session.id });
@@ -283,4 +435,4 @@ const updatePaymentStatus = async (req, res) => {
 
 
 
-export {registerUser,loginUser,getProfile,updateProfile ,bookAppointment , allAppointments, cancelAppointment,makePayment , updatePaymentStatus};
+export {registerUser, loginUser, verifyOTP, resendOTP, getProfile, updateProfile, bookAppointment, allAppointments, cancelAppointment, makePayment, updatePaymentStatus};

@@ -1,5 +1,6 @@
 import React from "react";
 import { assets } from "./../assets/assets";
+import Home from "../Pages/Home";
 
 const Footer = () => {
   return (
@@ -14,7 +15,7 @@ const Footer = () => {
         <div>
           <p className="pt-6 pb-1 text-xl font-medium mb-5">COMPANY</p>
           <ul className="flex flex-col gap-2 text-gray-600">
-            <li>Home</li>
+            
             <li>About us</li>
             <li>Contact us</li>
             <li>Privacy policy</li>
