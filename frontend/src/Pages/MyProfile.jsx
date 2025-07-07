@@ -3,10 +3,12 @@ import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import DefaultAvatar from "../components/DefaultAvatar.jsx";
 
 const MyProfile = () => {
-  const {userData,setUserData,token,backendUrl,loadUserProfileData}=useContext(AppContext)
+  const {userData, setUserData, token, setToken, backendUrl, loadUserProfileData} = useContext(AppContext)
+  const navigate = useNavigate()
 
   const [isEdit, setIsEdit] = useState(false);
   const [image,setImage]= useState(false)
@@ -82,6 +84,17 @@ const MyProfile = () => {
       setResendingVerification(false)
     }
   }
+
+  const handleLogout = () => {
+    // Remove token from localStorage
+    localStorage.removeItem('token');
+    // Update context state
+    setToken(false);
+    // Show success message
+    toast.success('Logged out successfully');
+    // Redirect to home page
+    navigate('/');
+  };
 
   // Function to render profile image or default avatar
   const renderProfileImage = (size = 'w-24 h-24 md:w-32 md:h-32') => {
@@ -279,15 +292,26 @@ const MyProfile = () => {
                     </button>
                   </>
                 ) : (
-              <button
-                    onClick={() => setIsEdit(true)}
-                    className="bg-white text-primary px-4 py-2 rounded-full font-medium hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2"
-              >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Profile
-              </button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => setIsEdit(true)}
+                      className="bg-white text-primary px-4 py-2 rounded-full font-medium hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="bg-red-50 text-red-600 px-4 py-2 rounded-full font-medium hover:bg-red-100 transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
