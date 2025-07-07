@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { assets } from "../../assets/assets.js";
 import { AppContext } from "../../context/AppContext.jsx";
 import { Link } from "react-router-dom";
+import DefaultAvatar from '../../components/DefaultAvatar';
 
 const Dashboard = () => {
   const { dashData, getdashboardData, aToken, cancelAppointment, backendUrl } =
@@ -197,7 +198,18 @@ const Dashboard = () => {
                     className="w-12 h-12 rounded-full object-cover border-2 border-gray-600"
                     src={item.userData?.image || assets.upload_area}
                     alt={item.userData?.name}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
+                  {(!item.userData?.image || item.userData.image === '') && (
+                    <DefaultAvatar 
+                      name={item.userData?.name} 
+                      size="w-12 h-12" 
+                      className="border-2 border-gray-600"
+                    />
+                  )}
                   <div className="flex-1 ml-4">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-white">
@@ -205,7 +217,7 @@ const Dashboard = () => {
                       </h3>
                       <span className="text-sm text-gray-400">with</span>
                       <span className="font-medium text-blue-400">
-                        {item.doctorData?.name || 'Doctor Name'}
+                        {item.docData?.name || 'Doctor Name'}
                       </span>
                     </div>
                     <p className="text-sm text-gray-400 mt-1">

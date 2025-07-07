@@ -37,11 +37,21 @@ const AdminSidebar = () => {
       name: "Pending Doctors",
       icon: assets.tick_icon,
     },
+    {
+      path: "/admin/settings",
+      name: "Settings",
+      icon: assets.home_icon,
+    },
   ];
 
   return (
     <div className="bg-gray-800 h-screen w-64 fixed left-0 top-0 shadow-lg">
-      <div className="h-16 border-b border-gray-700">
+      <div className="h-24 border-b border-gray-700 flex items-center justify-center">
+        <img
+          className="w-full h-full object-contain p-1"
+          src={assets.logo}
+          alt="Logo"
+        />
       </div>
       
       <nav className="mt-8">

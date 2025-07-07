@@ -4,6 +4,7 @@ import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
+import DefaultAvatar from '../../components/DefaultAvatar';
 
 const AllAppointment = () => {
   const { aToken, appointments, getAllAppointments, cancelAppointment, cancelAppointmentSilent } =
@@ -294,11 +295,23 @@ const AllAppointment = () => {
                   
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
+                      {item.userData.image && item.userData.image !== '' ? (
                       <img
                         className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
-                        src={item.userData.image || assets.upload_area}
+                          src={item.userData.image}
                         alt={item.userData.name}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : (
+                        <DefaultAvatar 
+                          name={item.userData.name} 
+                          size="w-10 h-10" 
+                          className="border-2 border-gray-600"
                       />
+                      )}
                       <div className="ml-3">
                         <div className="text-sm font-medium text-white">{item.userData.name}</div>
                         <div className="text-sm text-gray-400">{item.userData.email}</div>
@@ -317,11 +330,23 @@ const AllAppointment = () => {
                   
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
+                      {item.docData.image && item.docData.image !== '' ? (
                       <img
                         className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
-                        src={item.docData.image || assets.upload_area}
+                          src={item.docData.image}
                         alt={item.docData.name}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : (
+                        <DefaultAvatar 
+                          name={item.docData.name} 
+                          size="w-10 h-10" 
+                          className="border-2 border-gray-600"
                       />
+                      )}
                       <div className="ml-3">
                         <div className="text-sm font-medium text-white">{item.docData.name}</div>
                         <div className="text-sm text-gray-400">{item.docData.speciality}</div>

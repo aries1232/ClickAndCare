@@ -10,6 +10,7 @@ import { DoctorContext } from './context/DoctorContext';
 // Pages
 import LandingPage from './pages/LandingPage';
 import AdminLogin from './pages/AdminLogin';
+import AdminForgotPassword from './pages/AdminForgotPassword';
 import DoctorLogin from './pages/DoctorLogin';
 import DoctorSignup from './pages/Doctor/DoctorSignup';
 import AdminDashboard from './pages/Admin/Dashboard';
@@ -18,6 +19,7 @@ import DoctorList from './pages/Admin/DoctorList';
 import AllAppointment from './pages/Admin/AllAppointment';
 import PendingDoctors from './pages/Admin/PendingDoctors';
 import AdminLogs from './pages/Admin/AdminLogs';
+import AdminSettings from './pages/Admin/AdminSettings';
 import DoctorDashboard from './pages/Doctor/DoctorDashboard';
 import DoctorAppointments from './pages/Doctor/DoctorAppointments';
 import DoctorProfile from './pages/Doctor/DoctorProfile';
@@ -47,6 +49,7 @@ function App() {
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
               <Route path="/doctor-login" element={<DoctorLogin />} />
               <Route path="/doctor-signup" element={<DoctorSignup />} />
 
@@ -62,6 +65,7 @@ function App() {
                       <Route path="all-appointments" element={<AllAppointment />} />
                       <Route path="pending-doctors" element={<PendingDoctors />} />
                       <Route path="logs" element={<AdminLogs />} />
+                      <Route path="settings" element={<AdminSettings />} />
                       <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                     </Routes>
                   </AdminLayout>

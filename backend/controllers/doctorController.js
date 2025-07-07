@@ -243,6 +243,11 @@ const loginDoctor = async(req,res) => {
       return res.json({ success: false, message: "Your account is pending approval. Please contact admin." });
     }
 
+    // Check if password exists
+    if (!doctor.password) {
+      return res.json({ success: false, message: "Invalid Credentials :)" });
+    }
+
     const isMatch = await bcrypt.compare(password,doctor.password);
 
     if(isMatch) {

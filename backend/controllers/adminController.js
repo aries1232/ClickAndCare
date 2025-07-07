@@ -6,7 +6,9 @@ import jwt from 'jsonwebtoken';
 import appointmentModel from '../models/appointmentModel.js';
 import userModel from '../models/userModel.js';
 import AdminLog from '../models/adminLogModel.js';
+import Admin from '../models/adminModel.js';
 import { logAdminAction, LOG_MESSAGES } from '../utils/adminLogger.js';
+import { sendEmail } from '../utils/emailService.js';
 
 
 const addDoctor = async (req, res) => {
@@ -114,25 +116,66 @@ const allDoctors = async(req,res) => {
     
 }
 
+// --- ADMIN CONTROLLER MULTI-ADMIN SUPPORT ---
+// All admin actions now use the email from the request body or JWT (req.adminId) to find the admin in the database.
+// No use of process.env.ADMIN_EMAIL. All password checks use the DB value. All recovery email actions are per-admin.
+
+// Helper to get admin by req.adminId or email
+const getAdminFromRequest = async (req, emailFromBody) => {
+    if (req.adminId) {
+        return await Admin.findById(req.adminId);
+    }
+    if (emailFromBody) {
+        return await Admin.findOne({ email: emailFromBody });
+    }
+    return null;
+};
+
+// --- LOGIN ---
 const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
-    if(email != process.env.ADMIN_EMAIL || password != process.env.ADMIN_PASSWORD) {
-        res.json({ success: false, message: "wrong credentials!"});
-    }
     try {
-        if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-            const token = jwt.sign(email + password, process.env.JWT_SECRET);
-            
-            // Log admin login
-            await logAdminAction('LOGIN', LOG_MESSAGES.LOGIN, null, null, { email }, req);
-            
-            res.json({ success: true, token });
-            // console.log(token);
+        // First try to find admin by email (admin email)
+        let admin = await Admin.findOne({ email, isActive: true });
+        
+        // If not found by admin email, try to find by recovery email
+        if (!admin) {
+            admin = await Admin.findOne({ 
+                'recoveryEmails.email': email.toLowerCase(),
+                'recoveryEmails.isActive': true,
+                isActive: true 
+            });
         }
         
+        if (!admin) {
+            return res.json({ success: false, message: "Invalid credentials!" });
+        }
+        
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            return res.json({ success: false, message: "Invalid credentials!" });
+        }
+        
+        const token = jwt.sign({ adminId: admin._id, email: admin.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        await Admin.findByIdAndUpdate(admin._id, { lastLogin: new Date() });
+        
+        // Log which email was used for login
+        const loginEmailType = email.toLowerCase() === admin.email.toLowerCase() ? 'admin_email' : 'recovery_email';
+        await logAdminAction('LOGIN', LOG_MESSAGES.LOGIN, admin._id, admin.email, { 
+            loginEmail: email, 
+            loginEmailType,
+            adminEmail: admin.email 
+        }, req);
+        
+        res.json({ 
+            success: true, 
+            token,
+            adminEmail: admin.email, // Return the actual admin email for reference
+            loginEmail: email // Return the email that was used to login
+        });
     } catch (error) {
         console.log(error);
-        res.json({ success: false, message: error.message , message: "chud gye guru"});
+        res.json({ success: false, message: error.message });
     }
 };
 
@@ -393,4 +436,295 @@ const getAdminLogs = async (req, res) => {
     }
 };
 
-export { addDoctor, loginAdmin , allDoctors, appointmentsAdmin , appointmentCancel , adminDashboard, approveDoctor, getPendingDoctors, approveExistingDoctors, deleteDoctor, getAdminLogs }; 
+// --- FORGOT PASSWORD ---
+const adminForgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        // First try to find admin by email (admin email)
+        let admin = await Admin.findOne({ email, isActive: true });
+        
+        // If not found by admin email, try to find by recovery email
+        if (!admin) {
+            admin = await Admin.findOne({ 
+                'recoveryEmails.email': email.toLowerCase(),
+                'recoveryEmails.isActive': true,
+                isActive: true 
+            });
+        }
+        
+        if (!admin) {
+            return res.json({ success: false, message: "Admin account not found. Please use your admin email or any active recovery email." });
+        }
+        
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        admin.resetOTP = { code: otp, expiresAt: otpExpiry };
+        await admin.save();
+        
+        const activeRecoveryEmails = admin.recoveryEmails.filter(email => email.isActive);
+        if (activeRecoveryEmails.length === 0) {
+            return res.json({ success: false, message: "No recovery emails configured. Please contact system administrator." });
+        }
+        
+        const emailPromises = activeRecoveryEmails.map(async (recoveryEmail) => {
+            try {
+                await sendEmail({
+                    to: recoveryEmail.email,
+                    subject: "Admin Password Reset OTP - ClickAndCare",
+                    html: `<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\"><h2 style=\"color: #17de71;\">Admin Password Reset Request</h2><p>Hello ${recoveryEmail.name},</p><p>A password reset request has been made for the ClickAndCare admin account.</p><p><strong>Admin Email:</strong> ${admin.email}</p><p><strong>OTP Code:</strong> <span style=\"font-size: 24px; font-weight: bold; color: #17de71;\">${otp}</span></p><p><strong>Valid until:</strong> ${otpExpiry.toLocaleString()}</p><p style=\"color: #666; font-size: 14px;\">If you didn't request this reset, please ignore this email.</p><hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\"><p style=\"color: #999; font-size: 12px;\">This is an automated message from ClickAndCare system.</p></div>`
+                });
+                return { success: true, email: recoveryEmail.email };
+            } catch (error) {
+                console.error(`Failed to send email to ${recoveryEmail.email}:`, error);
+                return { success: false, email: recoveryEmail.email, error: error.message };
+            }
+        });
+        
+        const results = await Promise.all(emailPromises);
+        const successfulEmails = results.filter(r => r.success).map(r => r.email);
+        const failedEmails = results.filter(r => !r.success).map(r => r.email);
+        
+        await logAdminAction('FORGOT_PASSWORD', `Password reset OTP sent to ${successfulEmails.length} recovery emails`, admin._id, admin.email, { successfulEmails, failedEmails, totalRecoveryEmails: activeRecoveryEmails.length }, req);
+        
+        res.json({ 
+            success: true, 
+            message: `OTP sent to ${successfulEmails.length} recovery email(s)`, 
+            sentTo: successfulEmails, 
+            failedTo: failedEmails,
+            adminEmail: admin.email // Return the admin email for reference
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// --- RESET PASSWORD ---
+const adminResetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        const admin = await Admin.findOne({ email, isActive: true });
+        if (!admin) {
+            return res.json({ success: false, message: "Admin account not found" });
+        }
+        if (!admin.resetOTP || !admin.resetOTP.code || !admin.resetOTP.expiresAt) {
+            return res.json({ success: false, message: "No OTP request found" });
+        }
+        if (new Date() > admin.resetOTP.expiresAt) {
+            return res.json({ success: false, message: "OTP has expired" });
+        }
+        if (admin.resetOTP.code !== otp) {
+            return res.json({ success: false, message: "Invalid OTP" });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        admin.password = hashedPassword;
+        admin.resetOTP = undefined;
+        await admin.save();
+        await logAdminAction('RESET_PASSWORD', 'Admin password reset successfully', admin._id, admin.email, { email }, req);
+        res.json({ success: true, message: "Password reset successfully" });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// --- GET ADMIN PROFILE ---
+const getAdminProfile = async (req, res) => {
+    try {
+        let admin = null;
+        if (req.adminId) {
+            admin = await Admin.findById(req.adminId).select('-password -resetOTP');
+        } else if (req.query.email) {
+            admin = await Admin.findOne({ email: req.query.email }).select('-password -resetOTP');
+        }
+        if (!admin) {
+            return res.json({ success: false, message: "Admin not found" });
+        }
+        res.json({ success: true, admin });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+
+
+// --- ADD RECOVERY EMAIL ---
+const addRecoveryEmail = async (req, res) => {
+    try {
+        const { email, name, password } = req.body;
+        if (!validator.isEmail(email)) {
+            return res.json({ success: false, message: "Please enter a valid email" });
+        }
+        if (!password) {
+            return res.json({ success: false, message: "Admin password is required" });
+        }
+        if (!name || !name.trim()) {
+            return res.json({ success: false, message: "Name is required" });
+        }
+        
+        const admin = await Admin.findById(req.adminId);
+        if (!admin) {
+            return res.json({ success: false, message: "Admin account not found" });
+        }
+        
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            return res.json({ success: false, message: "Invalid admin password" });
+        }
+        
+        const existingEmail = admin.recoveryEmails.find(re => re.email === email.toLowerCase());
+        if (existingEmail) {
+            return res.json({ success: false, message: "Recovery email already exists" });
+        }
+        
+        admin.recoveryEmails.push({
+            email: email.toLowerCase(),
+            name: name.trim(),
+            isActive: true
+        });
+        
+        await admin.save();
+        await logAdminAction('ADD_RECOVERY_EMAIL', `Added recovery email: ${email}`, admin._id, admin.email, { email, name }, req);
+        res.json({ success: true, message: "Recovery email added successfully" });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Remove recovery email
+const removeRecoveryEmail = async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        const admin = await Admin.findById(req.adminId);
+        if (!admin) {
+            return res.json({ success: false, message: "Admin not found" });
+        }
+        
+        // Find and remove the email
+        const emailIndex = admin.recoveryEmails.findIndex(re => re.email === email.toLowerCase());
+        if (emailIndex === -1) {
+            return res.json({ success: false, message: "Recovery email not found" });
+        }
+        
+        const removedEmail = admin.recoveryEmails[emailIndex];
+        admin.recoveryEmails.splice(emailIndex, 1);
+        await admin.save();
+        
+        // Log the action
+        await logAdminAction(
+            'REMOVE_RECOVERY_EMAIL',
+            `Removed recovery email: ${email}`,
+            admin._id,
+            admin.email,
+            { email },
+            req
+        );
+        
+        res.json({ success: true, message: "Recovery email removed successfully" });
+        
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Toggle recovery email status
+const toggleRecoveryEmail = async (req, res) => {
+    try {
+        const { email } = req.params;
+        
+        const admin = await Admin.findById(req.adminId);
+        if (!admin) {
+            return res.json({ success: false, message: "Admin not found" });
+        }
+        
+        // Find the email
+        const recoveryEmail = admin.recoveryEmails.find(re => re.email === email.toLowerCase());
+        if (!recoveryEmail) {
+            return res.json({ success: false, message: "Recovery email not found" });
+        }
+        
+        // Toggle status
+        recoveryEmail.isActive = !recoveryEmail.isActive;
+        await admin.save();
+        
+        // Log the action
+        await logAdminAction(
+            'TOGGLE_RECOVERY_EMAIL',
+            `${recoveryEmail.isActive ? 'Activated' : 'Deactivated'} recovery email: ${email}`,
+            admin._id,
+            admin.email,
+            { email, isActive: recoveryEmail.isActive },
+            req
+        );
+        
+        res.json({ 
+            success: true, 
+            message: `Recovery email ${recoveryEmail.isActive ? 'activated' : 'deactivated'} successfully`,
+            isActive: recoveryEmail.isActive
+        });
+        
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// --- CHANGE ADMIN EMAIL ---
+const changeAdminEmail = async (req, res) => {
+    try {
+        const { newEmail, password } = req.body;
+        
+        if (!validator.isEmail(newEmail)) {
+            return res.json({ success: false, message: "Please enter a valid email" });
+        }
+        
+        if (!password) {
+            return res.json({ success: false, message: "Admin password is required" });
+        }
+        
+        const admin = await Admin.findById(req.adminId);
+        if (!admin) {
+            return res.json({ success: false, message: "Admin account not found" });
+        }
+        
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            return res.json({ success: false, message: "Invalid admin password" });
+        }
+        
+        // Check if the new email is already in use by another admin
+        const existingAdmin = await Admin.findOne({ email: newEmail.toLowerCase() });
+        if (existingAdmin && existingAdmin._id.toString() !== admin._id.toString()) {
+            return res.json({ success: false, message: "Email is already in use by another admin" });
+        }
+        
+        // Check if the new email is already a recovery email
+        const isRecoveryEmail = admin.recoveryEmails.some(re => re.email === newEmail.toLowerCase());
+        if (isRecoveryEmail) {
+            return res.json({ success: false, message: "Cannot use a recovery email as the main admin email" });
+        }
+        
+        const oldEmail = admin.email;
+        admin.email = newEmail.toLowerCase();
+        await admin.save();
+        
+        await logAdminAction('CHANGE_ADMIN_EMAIL', `Changed admin email from ${oldEmail} to ${newEmail}`, admin._id, admin.email, { oldEmail, newEmail }, req);
+        
+        res.json({ 
+            success: true, 
+            message: "Admin email changed successfully",
+            newEmail: admin.email
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+export { addDoctor, loginAdmin , allDoctors, appointmentsAdmin , appointmentCancel , adminDashboard, approveDoctor, getPendingDoctors, approveExistingDoctors, deleteDoctor, getAdminLogs, adminForgotPassword, adminResetPassword, getAdminProfile, addRecoveryEmail, removeRecoveryEmail, toggleRecoveryEmail, changeAdminEmail }; 

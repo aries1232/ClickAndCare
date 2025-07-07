@@ -118,9 +118,8 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message);
             }
         } catch (error) {
-
             console.log(error.message);
-            toast.error(data.message);
+            toast.error(error.message || 'Failed to fetch appointments');
         }
     }
 

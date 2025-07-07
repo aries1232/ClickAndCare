@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
+import DefaultAvatar from '../../components/DefaultAvatar';
 
 const DoctorDashboard = () => {
   const { dToken, dashData, getDashData, completeAppointment, cancelAppointment, getAppointments } =
@@ -179,11 +180,23 @@ const DoctorDashboard = () => {
                 key={index}
               >
                   <div className="relative">
+                    {item.userData?.image && item.userData.image !== '' ? (
                     <img
                       className="w-12 h-12 rounded-full object-cover border-2 border-gray-600"
-                      src={item.userData?.image || assets.upload_area}
-                      alt={item.userData?.name}
+                        src={item.userData.image}
+                        alt={item.userData.name}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : (
+                      <DefaultAvatar 
+                        name={item.userData?.name} 
+                        size="w-12 h-12" 
+                        className="border-2 border-gray-600"
                     />
+                    )}
                     {item.cancelled && (
                       <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         ✕

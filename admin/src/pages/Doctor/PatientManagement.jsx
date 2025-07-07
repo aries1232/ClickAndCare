@@ -3,6 +3,7 @@ import { useContext } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
+import DefaultAvatar from '../../components/DefaultAvatar';
 
 const PatientManagement = () => {
   const { dToken, appointments, getAppointments } = useContext(DoctorContext);
@@ -149,11 +150,23 @@ const PatientManagement = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <img
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
-                        src={patient.image || assets.upload_area}
-                        alt={patient.name}
-                      />
+                      {patient.image && patient.image !== '' ? (
+                        <img
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
+                          src={patient.image}
+                          alt={patient.name}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : (
+                        <DefaultAvatar 
+                          name={patient.name} 
+                          size="w-10 h-10" 
+                          className="border-2 border-gray-600"
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-white truncate">{patient.name}</h3>
                         <p className="text-sm text-gray-400 truncate">{patient.email}</p>
@@ -187,11 +200,23 @@ const PatientManagement = () => {
               <div className="px-6 py-4 border-b border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img
-                      className="w-12 h-12 rounded-full object-cover border-2 border-gray-600"
-                      src={selectedPatient.image || assets.upload_area}
-                      alt={selectedPatient.name}
-                    />
+                    {selectedPatient.image && selectedPatient.image !== '' ? (
+                      <img
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-600"
+                        src={selectedPatient.image}
+                        alt={selectedPatient.name}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : (
+                      <DefaultAvatar 
+                        name={selectedPatient.name} 
+                        size="w-12 h-12" 
+                        className="border-2 border-gray-600"
+                      />
+                    )}
                     <div>
                       <h2 className="text-xl font-semibold text-white">{selectedPatient.name}</h2>
                       <p className="text-gray-400">{selectedPatient.email}</p>

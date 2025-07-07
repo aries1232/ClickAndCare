@@ -41,8 +41,12 @@ const DoctorSidebar = () => {
 
     return (
         <div className="bg-gray-800 h-screen w-64 fixed left-0 top-0 shadow-lg">
-            <div className="flex items-center justify-center h-16 border-b border-gray-700">
-                <img src={assets.logo} alt="Logo" className="h-8" />
+            <div className="h-24 border-b border-gray-700 flex items-center justify-center">
+                <img
+                    className="w-full h-full object-contain p-1"
+                    src={assets.logo}
+                    alt="Logo"
+                />
             </div>
             
             <nav className="mt-8">

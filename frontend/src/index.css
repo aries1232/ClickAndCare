@@ -7,6 +7,16 @@
     font-family: outfit;
 }
 
+/* Card hover effects */
+.card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
 .active hr {
     @apply block
 }
@@ -20,3 +30,64 @@
         @apply text-white bg-primary;
     }
 }
+
+/* Simple page transition */
+.page-transition {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Remove focus outline from buttons and interactive elements */
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none !important;
+}
+
+/* Alternative: Use a subtle focus ring instead of outline */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Ensure NavLink text colors work properly in dark mode */
+.dark .NavLink,
+.dark a {
+    color: white !important;
+}
+
+.dark .NavLink:hover,
+.dark a:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Remove focus outline from dark mode toggle specifically */
+button[aria-label="Toggle dark mode"]:focus,
+button[aria-label="Toggle dark mode"]:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    ring: none !important;
+}
+
+

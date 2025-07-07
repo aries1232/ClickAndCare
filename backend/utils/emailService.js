@@ -17,6 +17,36 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Generic email sending function
+export const sendEmail = async ({ to, subject, html }) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    html
+  };
+
+  try {
+    console.log('Sending email with options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', result.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      response: error.response
+    });
+    return false;
+  }
+};
+
 // Send OTP verification email
 export const sendOTPEmail = async (email, otp, name) => {
   console.log('Attempting to send OTP email to:', email);
@@ -134,6 +164,70 @@ export const sendAppointmentConfirmation = async (email, appointmentData, userNa
     return true;
   } catch (error) {
     console.error('Error sending appointment confirmation email:', error);
+    return false;
+  }
+};
+
+// Send password reset OTP email
+export const sendPasswordResetOTP = async (email, otp, name) => {
+  console.log('Attempting to send password reset OTP email to:', email);
+  console.log('OTP:', otp);
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Password Reset OTP - ClickAndCare',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #17de71; color: white; padding: 20px; text-align: center;">
+          <h1>ClickAndCare</h1>
+        </div>
+        <div style="padding: 20px;">
+          <h2>Hello ${name}!</h2>
+          <p>We received a request to reset your password. Please use the OTP below to reset your password.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="background-color: #f8f9fa; border: 2px solid #17de71; border-radius: 10px; padding: 20px; display: inline-block;">
+              <h3 style="margin: 0; color: #17de71; font-size: 24px;">Reset OTP</h3>
+              <div style="font-size: 32px; font-weight: bold; color: #17de71; letter-spacing: 5px; margin: 10px 0;">${otp}</div>
+              <p style="margin: 0; color: #666; font-size: 14px;">Enter this code to reset your password</p>
+            </div>
+          </div>
+          
+          <p><strong>Important:</strong></p>
+          <ul>
+            <li>This OTP will expire in 10 minutes</li>
+            <li>Do not share this OTP with anyone</li>
+            <li>If you didn't request a password reset, please ignore this email</li>
+            <li>Your password will remain unchanged if you don't use this OTP</li>
+          </ul>
+          
+          <p>Thank you for choosing ClickAndCare!</p>
+        </div>
+        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d;">
+          <p>&copy; 2024 ClickAndCare. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    console.log('Sending password reset email with options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Password reset email sent successfully:', result.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      response: error.response
+    });
     return false;
   }
 }; 

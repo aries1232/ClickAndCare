@@ -1,5 +1,5 @@
 import express from 'express'
-import { registerUser, loginUser, verifyOTP, resendOTP, getProfile, updateProfile, bookAppointment, allAppointments, cancelAppointment, makePayment, updatePaymentStatus } from '../controllers/userController.js'
+import { registerUser, loginUser, verifyOTP, resendOTP, getProfile, updateProfile, bookAppointment, allAppointments, cancelAppointment, makePayment, updatePaymentStatus, forgotPassword, resetPassword } from '../controllers/userController.js'
 import authUser from '../middlewares/authUser.js'
 import upload from '../middlewares/multer.js'
 // import MyProfile from '../../frontend/src/Pages/MyProfile.jsx'
@@ -10,6 +10,8 @@ userRouter.post('/register', registerUser)
 userRouter.post('/verify-otp', verifyOTP)
 userRouter.post('/resend-otp', resendOTP)
 userRouter.post('/login', loginUser)
+userRouter.post('/forgot-password', forgotPassword)
+userRouter.post('/reset-password', resetPassword)
 userRouter.get('/get-profile', authUser, getProfile)
 // userRouter.get('/my-profile', authUser, MyProfile)
 userRouter.post('/update-profile', upload.single('image'), authUser, updateProfile)
