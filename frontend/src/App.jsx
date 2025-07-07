@@ -10,45 +10,62 @@ import Register from "./Pages/Register.jsx";
 import OTPVerification from "./Pages/OTPVerification.jsx";
 import Contact from './Pages/Contact.jsx';
 import MyAppointment from "./Pages/MyAppointment.jsx";
+import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import Navbar from "./Components/Navbar.jsx";
 import Footer from "./Components/Footer";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Success from "./Pages/Success.jsx";
 import Cancel from "./Pages/Cancel.jsx";
+import { DarkModeProvider } from "./context/DarkModeContext";
 
 const App = () => {
   const location = useLocation();
 
   // Hide Navbar and Footer on these pages
-  const hideNavbarFooter = location.pathname === "/login" || location.pathname === "/register";
+  const hideNavbarFooter = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/forgot-password";
 
   return (
-    <div className="mx-4 sm:mx-[10%]">
-      <ToastContainer />
+    <DarkModeProvider>
+      <div className="dark:bg-gray-900 dark:text-white min-h-screen">
+        <div className="mx-4 sm:mx-[10%]">
+        <ToastContainer />
 
-      {/* Show Navbar only if not on Login/Register pages */}
-      {!hideNavbarFooter && <Navbar />}
+        {/* Show Navbar only if not on Login/Register pages */}
+        {!hideNavbarFooter && <Navbar />}
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/appointment/:docId" element={<Appointment />} />
-        <Route path="/my-appointments" element={<MyAppointment />} />
-        <Route path="/doctors" element={<Doctors />} />
-        <Route path="/doctors/:speciality" element={<Doctors />} />
-        <Route path="/my-profile" element={<MyProfile />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-otp" element={<OTPVerification />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/success/:appointmentId" element={<Success />} />
-        <Route path="/cancel" element={<Cancel />} />
-      </Routes>
+        <div 
+          key={location.pathname}
+          className="page-transition"
+          style={{ 
+            position: 'relative',
+            minHeight: '100vh',
+            width: '100%'
+          }}
+        >
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/appointment/:docId" element={<Appointment />} />
+            <Route path="/my-appointments" element={<MyAppointment />} />
+            <Route path="/doctors" element={<Doctors />} />
+            <Route path="/doctors/:speciality" element={<Doctors />} />
+            <Route path="/my-profile" element={<MyProfile />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-otp" element={<OTPVerification />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/success/:appointmentId" element={<Success />} />
+            <Route path="/cancel" element={<Cancel />} />
+          </Routes>
+        </div>
 
-      {/* Show Footer only if not on Login/Register pages */}
-      {!hideNavbarFooter && <Footer />}
-    </div>
+        {/* Show Footer only if not on Login/Register pages */}
+        {!hideNavbarFooter && <Footer />}
+        </div>
+      </div>
+    </DarkModeProvider>
   );
 };
 

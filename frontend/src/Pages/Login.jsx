@@ -1,6 +1,4 @@
 import React, { useContext, useEffect, useState } from 'react'
-import './login.css'
-
 import { AppContext } from '../context/AppContext'
 import axios from 'axios'
 import { toast } from 'react-toastify';
@@ -49,98 +47,138 @@ const Login = () => {
   }, [token, navigate])
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      // top : '500px'
-      minHeight : '100vh'
-    }}>
-      <div style={{
-        width: '50%',
-        maxWidth: 500,
-        background: '#fff',
-        borderRadius: 14,
-        boxShadow: '0 6px 24px rgba(79,70,229,0.10)',
-        padding: 8,
-        margin: '8px auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 5,
-        alignItems: 'center',
-      }}>
-        <div className="header">
-          <img src={logo} alt="Logo" style={{ width: 120, height: 60, marginBottom: 0 }} />
-          {/* <div className="text" style={{ fontFamily: 'inherit', fontWeight: 700, fontSize: 30, color: '#234', letterSpacing: 1 }}>Click&Care</div> */}
-          {/* <div className="underline" style={{ margin: '0 auto', marginTop: 4, marginBottom: 8, width: 60, height: 4, background: '#4F46E5', borderRadius: 2 }}></div> */}
-          <div className="underline"></div>
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo and Header */}
+        <div className="text-center mb-8">
+          <img src={logo} alt="Click&Care" className="w-32 h-16 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back</h1>
+          <p className="text-gray-600">Sign in to your account to continue</p>
         </div>
-        <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 8, textAlign: 'center' }}>Login to your Account</div>
-        
-        <form onSubmit={onSubmitHandler} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="inputs" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div className="input">
+
+        {/* Login Form */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <form onSubmit={onSubmitHandler} className="space-y-6">
+            {/* Email Input */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
               <input 
+                  id="email"
                 type="email" 
-                placeholder='Email Address' 
+                  placeholder="Enter your email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 required
-                style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd' }}
-              />
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
-            <div className="input" style={{ position: 'relative' }}>
+            {/* Password Input */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
               <input 
+                  id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder='Password' 
+                  placeholder="Enter your password" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required
-                style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd' }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none pr-12 bg-white"
               />
-              <button type="button" onClick={() => setShowPassword((prev) => !prev)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#4F46E5', cursor: 'pointer', fontSize: '12px' }}>
-                {showPassword ? 'Hide' : 'Show'}
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword((prev) => !prev)} 
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
               </button>
             </div>
           </div>
           
-          <div className="forgot-password" style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>Lost Password? <span style={{ color: '#4F46E5', cursor: 'pointer' }}>Click here</span></div>
+            {/* Forgot Password */}
+            <div className="flex items-center justify-end">
+              <div className="text-sm">
+                <button
+                  onClick={() => navigate('/forgot-password')}
+                  className="font-medium text-primary hover:text-green-600 transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            </div>
 
-          <div className="submit-container" style={{ marginTop: 8 }}>
+            {/* Submit Button */}
             <button 
               type="submit" 
-              className="submit" 
               disabled={loading}
-              style={{ 
-                width: '100%',
-                padding: '12px',
-                background: '#17de71',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: 16,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.7 : 1,
-                boxShadow: '0 2px 8px rgba(79,70,229,0.08)'
-              }}
-              onMouseOver={e => e.target.style.background = '#0fbd5e'}
-              onMouseOut={e => e.target.style.background = '#17de71'}
+              className="w-full bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">New to Click&Care?</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Register Link */}
+          <div className="mt-6">
+            <button
+            onClick={() => navigate('/register')}
+              className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200"
+            >
+              Create an account
             </button>
           </div>
-        </form>
+        </div>
 
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <span style={{ color: '#666' }}>Don't have an account? </span>
-          <span 
-            style={{ color: '#4F46E5', cursor: 'pointer', textDecoration: 'underline' }}
-            onClick={() => navigate('/register')}
-          >
-            Register here
-          </span>
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-500">
+            By signing in, you agree to our{' '}
+            <a href="#" className="text-primary hover:text-green-600 transition-colors">Terms of Service</a>
+            {' '}and{' '}
+            <a href="#" className="text-primary hover:text-green-600 transition-colors">Privacy Policy</a>
+          </p>
         </div>
       </div>
     </div>

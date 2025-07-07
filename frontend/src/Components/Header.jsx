@@ -15,7 +15,7 @@ const Header = () => {
               schedule your appointment hassle-free.</p>
           </div> 
 
-          <a href= "#speciality" className='flex items-center gap-4 px-8 py-3 rounded-full bg-white hover:scale-105 transtion-all duration-500'>
+          <a href= "#speciality" className='flex items-center gap-4 px-8 py-3 rounded-full bg-white dark:bg-gray-800 hover:scale-105 transtion-all duration-500 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'>
               Book Appointment <img src={assets.arrow_icon}></img>
           </a>
       </div>

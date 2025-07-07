@@ -1,0 +1,21 @@
+{
+  "name": "clickandcare",
+  "version": "1.0.0",
+  "description": "ClickAndCare - Healthcare Management System",
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../admin && npm install",
+    "build:frontend": "cd frontend && npm run build",
+    "build:admin": "cd admin && npm run build",
+    "build:all": "npm run build:frontend && npm run build:admin",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:admin": "cd admin && npm run dev",
+    "start:backend": "cd backend && npm start",
+    "run:all": "start cmd /k \"npm run start:backend\" && start cmd /k \"npm run dev:frontend\" && start cmd /k \"npm run dev:admin\"",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:admin": "cd admin && npm run lint",
+    "lint:all": "npm run lint:frontend && npm run lint:admin"
+  },
+  "keywords": ["healthcare", "appointment", "doctor", "patient"],
+  "author": "",
+  "license": "ISC"
+} 

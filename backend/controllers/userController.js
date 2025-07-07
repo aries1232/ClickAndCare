@@ -12,6 +12,7 @@ import crypto from "crypto";
 import {
   sendOTPEmail,
   sendAppointmentConfirmation,
+  sendPasswordResetOTP,
 } from "../utils/emailService.js";
 
 // Generate 6-digit OTP
@@ -24,7 +25,7 @@ const registerUser = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
 
-    if (!name || !password || !email || !phone) {
+    if (!name || !password || !email) {
       return res.json({ success: false, message: "Missing Details" });
     }
 
@@ -60,7 +61,7 @@ const registerUser = async (req, res) => {
     const userData = {
       name,
       email,
-      phone,
+      phone: phone || '0000000000', // Use provided phone or default
       password: hashedPassword,
       otp,
       otpExpiry,
@@ -252,17 +253,29 @@ const updateProfile = async (req, res) => {
   try {
     const { userId, name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
-    if (!name || !phone || !address || !dob || !gender) {
-      return res.json({ success: false, message: "Data Missing" });
+    
+    if (!userId || !name || !phone) {
+      return res.json({ success: false, message: "Required fields missing" });
     }
 
-    await userModel.findByIdAndUpdate(userId, {
+    const updateData = {
       name,
       phone,
-      address: JSON.parse(address),
-      dob,
-      gender,
-    });
+      dob: dob || "Not Selected",
+      gender: gender || "Not Selected",
+    };
+
+    // Handle address parsing
+    if (address) {
+      try {
+        updateData.address = JSON.parse(address);
+      } catch (error) {
+        updateData.address = { line1: "", line2: "" };
+      }
+    }
+
+    await userModel.findByIdAndUpdate(userId, updateData);
+    
     if (imageFile) {
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
         resource_type: "image",
@@ -341,7 +354,7 @@ const bookAppointment = async (req, res) => {
 const allAppointments = async (req, res) => {
   try {
     const { userId } = req.body;
-    const data = await appointmentModel.find({ userId });
+    const data = await appointmentModel.find({ userId }).sort({ date: -1 });
     //console.log(data);
     res.json({ success: true, data });
   } catch (error) {
@@ -450,6 +463,109 @@ const updatePaymentStatus = async (req, res) => {
   }
 };
 
+// API to send forgot password OTP
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.json({ success: false, message: "Email is required" });
+    }
+
+    if (!validator.isEmail(email)) {
+      return res.json({ success: false, message: "Enter a valid email" });
+    }
+
+    // Check if user exists
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.json({ success: false, message: "User with this email does not exist" });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Update user with reset OTP
+    await userModel.findByIdAndUpdate(user._id, {
+      resetOTP: otp,
+      resetOTPExpiry: otpExpiry,
+    });
+
+    // Send password reset OTP email
+    const emailSent = await sendPasswordResetOTP(email, otp, user.name);
+
+    if (emailSent) {
+      res.json({
+        success: true,
+        message: "Password reset OTP sent to your email. Please check your inbox.",
+        userId: user._id,
+      });
+    } else {
+      res.json({
+        success: false,
+        message: "Failed to send OTP. Please try again.",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to verify password reset OTP and reset password
+const resetPassword = async (req, res) => {
+  try {
+    const { userId, otp, newPassword } = req.body;
+
+    if (!userId || !otp || !newPassword) {
+      return res.json({ success: false, message: "Missing Details" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.json({
+        success: false,
+        message: "Enter a strong password (minimum 8 characters)",
+      });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if (user.resetOTP !== otp) {
+      return res.json({ success: false, message: "Invalid OTP" });
+    }
+
+    if (new Date() > user.resetOTPExpiry) {
+      return res.json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password and clear reset OTP
+    await userModel.findByIdAndUpdate(userId, {
+      password: hashedPassword,
+      resetOTP: undefined,
+      resetOTPExpiry: undefined,
+    });
+
+    res.json({
+      success: true,
+      message: "Password reset successfully! You can now login with your new password.",
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -462,4 +578,6 @@ export {
   cancelAppointment,
   makePayment,
   updatePaymentStatus,
+  forgotPassword,
+  resetPassword,
 };
