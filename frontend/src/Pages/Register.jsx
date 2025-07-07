@@ -3,6 +3,7 @@ import { AppContext } from '../context/AppContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
+import { GoogleLogin } from '@react-oauth/google'
 
 import logo from '../assets/logo.png'
 
@@ -29,12 +30,43 @@ const Register = () => {
   const [otp, setOtp] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [tempUserId, setTempUserId] = useState('')
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+  
+  const handleGoogleSignup = async (credentialResponse) => {
+    try {
+      setGoogleLoading(true)
+      const { credential } = credentialResponse
+      
+      // Decode the JWT token from Google
+      const decodedToken = JSON.parse(atob(credential.split('.')[1]))
+      
+      const { data } = await axios.post(backendUrl + '/api/user/google-login', {
+        googleId: decodedToken.sub,
+        email: decodedToken.email,
+        name: decodedToken.name,
+        imageUrl: decodedToken.picture
+      })
+      
+      if (data.success) {
+        localStorage.setItem('token', data.token)
+        toast.success("Account created with Google!")
+        navigate('/')
+      } else {
+        toast.error(data.message || "Failed to create account with Google")
+      }
+    } catch (error) {
+      console.error('Google signup error:', error)
+      toast.error(error.response?.data?.message || 'Google signup failed. Please try again.')
+    } finally {
+      setGoogleLoading(false)
+    }
   }
 
   const sendEmailOTP = async () => {
@@ -285,6 +317,35 @@ const Register = () => {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Google Signup */}
+          <div className="mt-6">
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSignup}
+                onError={() => {
+                  toast.error('Google signup failed. Please try again.');
+                }}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                text="signup_with"
+                logo_alignment="center"
+              />
+            </div>
+          </div>
 
           {/* Divider */}
           <div className="mt-6">

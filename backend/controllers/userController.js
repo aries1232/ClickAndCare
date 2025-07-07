@@ -566,6 +566,56 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// API to handle Google OAuth login
+const googleLogin = async (req, res) => {
+  try {
+    const { googleId, name, email, imageUrl } = req.body;
+    
+    if (!googleId || !email) {
+      return res.json({ success: false, message: "Missing required Google account details" });
+    }
+
+    // Check if user already exists with this email
+    let user = await userModel.findOne({ email });
+
+    if (user) {
+      // If user exists but without Google ID (registered via regular method)
+      if (!user.googleId) {
+        // Update the user with Google ID and mark as verified
+        user = await userModel.findOneAndUpdate(
+          { email },
+          { 
+            googleId, 
+            authProvider: 'google', 
+            isVerified: true,
+            image: user.image || imageUrl || ''
+          },
+          { new: true }
+        );
+      }
+    } else {
+      // Create new user with Google authentication
+      user = new userModel({
+        name,
+        email,
+        googleId,
+        authProvider: 'google',
+        isVerified: true, // Google accounts are pre-verified
+        image: imageUrl || '',
+      });
+      await user.save();
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    res.json({ success: true, token, message: "Google login successful" });
+
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -580,4 +630,5 @@ export {
   updatePaymentStatus,
   forgotPassword,
   resetPassword,
+  googleLogin,
 };
