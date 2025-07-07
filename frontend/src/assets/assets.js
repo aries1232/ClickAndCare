@@ -61,28 +61,64 @@ export const assets = {
 
 export const  specialityData = [
     {
-        speciality: 'General physician',
+        speciality: 'General Physician',
         image: General_physician
     },
     {
-        speciality: 'Gynecologist',
-        image: Gynecologist
+        speciality: 'Cardiologist',
+        image: General_physician // Using general physician icon as fallback
     },
     {
         speciality: 'Dermatologist',
         image: Dermatologist
     },
     {
-        speciality: 'Pediatricians',
-        image: Pediatricians
-    },
-    {
         speciality: 'Neurologist',
         image: Neurologist
     },
     {
+        speciality: 'Pediatrician',
+        image: Pediatricians
+    },
+    {
+        speciality: 'Gynecologist',
+        image: Gynecologist
+    },
+    {
         speciality: 'Gastroenterologist',
         image: Gastroenterologist
+    },
+    {
+        speciality: 'Orthopedic',
+        image: General_physician // Using general physician icon as fallback
+    },
+    {
+        speciality: 'Psychiatrist',
+        image: General_physician // Using general physician icon as fallback
+    },
+    {
+        speciality: 'Dentist',
+        image: General_physician // Using general physician icon as fallback
+    },
+    {
+        speciality: 'Ophthalmologist',
+        image: General_physician // Using general physician icon as fallback
+    },
+    {
+        speciality: 'ENT Specialist',
+        image: General_physician // Using general physician icon as fallback
+    },
+    {
+        speciality: 'Pulmonologist',
+        image: General_physician // Using general physician icon as fallback
+    },
+    {
+        speciality: 'Endocrinologist',
+        image: General_physician // Using general physician icon as fallback
+    },
+    {
+        speciality: 'Oncologist',
+        image: General_physician // Using general physician icon as fallback
     },
 ]
 

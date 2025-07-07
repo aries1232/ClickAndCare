@@ -40,7 +40,7 @@ const Doctors = () => {
       <p className="text-gray-600">Browse through the doctors specialist.</p>
       <div className="flex flex-col sm:flex-row items-start gap-5 mt-5">
         <div className="flex flex-col gap-4 text-sm text-gray-600">
-          {["General Physician", "Gynecologist", "Dermatologist", "Pediatricians", "Neurologist", "Gastroenterologist"].map((speciality) => (
+          {["General Physician", "Cardiologist", "Dermatologist", "Neurologist", "Pediatrician", "Gynecologist", "Gastroenterologist", "Orthopedic", "Psychiatrist", "Dentist", "Ophthalmologist", "ENT Specialist", "Pulmonologist", "Endocrinologist", "Oncologist"].map((speciality) => (
             <p
               key={speciality}
               onClick={() => handleSpecialityClick(speciality)}

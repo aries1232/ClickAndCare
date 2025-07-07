@@ -2,7 +2,229 @@ import doctorModel from "../models/doctorModel.js";
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import appointmentModel from "../models/appointmentModel.js";
+import validator from 'validator';
+import { v2 as cloudinary } from 'cloudinary';
+import nodemailer from 'nodemailer';
+import { logAdminAction } from '../utils/adminLogger.js';
 
+// Generate OTP
+const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Send OTP email
+const sendOTPEmail = async (email, otp) => {
+    try {
+        const transporter = nodemailer.createTransporter({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'ClickAndCare - Email Verification OTP',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">ClickAndCare</h2>
+                    <h3>Email Verification</h3>
+                    <p>Your verification code is:</p>
+                    <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                        <h1 style="color: #2563eb; font-size: 32px; margin: 0;">${otp}</h1>
+                    </div>
+                    <p>This code will expire in 10 minutes.</p>
+                    <p>If you didn't request this code, please ignore this email.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        return true;
+    } catch (error) {
+        console.error('Email sending error:', error);
+        return false;
+    }
+};
+
+// Send OTP for email verification
+const sendSignupOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.json({ success: false, message: "Email is required" });
+        }
+
+        // Validate email
+        if (!validator.isEmail(email)) {
+            return res.json({ success: false, message: "Please enter a valid email" });
+        }
+
+        // Check if doctor already exists
+        const existingDoctor = await doctorModel.findOne({ email });
+        if (existingDoctor) {
+            return res.json({ success: false, message: "Doctor with this email already exists! Please login." });
+        }
+
+        // Generate OTP
+        const otp = generateOTP();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // Save OTP to database (create temporary record)
+        await doctorModel.findOneAndUpdate(
+            { email },
+            { 
+                email,
+                otp,
+                otpExpiry,
+                emailVerified: false
+            },
+            { upsert: true, new: true }
+        );
+
+        // Send OTP email
+        const emailSent = await sendOTPEmail(email, otp);
+        if (!emailSent) {
+            return res.json({ success: false, message: "Failed to send OTP. Please try again." });
+        }
+
+        res.json({ 
+            success: true, 
+            message: "OTP sent successfully to your email" 
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Verify OTP
+const verifySignupOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.json({ success: false, message: "Email and OTP are required" });
+        }
+
+        // Find doctor with this email and OTP
+        const doctor = await doctorModel.findOne({ 
+            email, 
+            otp,
+            otpExpiry: { $gt: new Date() }
+        });
+
+        if (!doctor) {
+            return res.json({ success: false, message: "Invalid OTP or OTP expired" });
+        }
+
+        // Mark email as verified
+        await doctorModel.findByIdAndUpdate(doctor._id, {
+            emailVerified: true,
+            otp: null,
+            otpExpiry: null
+        });
+
+        res.json({ 
+            success: true, 
+            message: "Email verified successfully! You can now complete your registration." 
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+//api for doctor signup
+const signupDoctor = async (req, res) => {
+    try {
+        const { name, email, password, speciality, degree, experience, about, fees, address } = req.body;
+        const imageFile = req.file;
+
+        // Checking for all data to add doctor
+        if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address) {
+            return res.json({ success: false, message: "Missing Details" });
+        }
+
+        // Check if email is verified
+        const existingDoctor = await doctorModel.findOne({ email });
+        if (!existingDoctor || !existingDoctor.emailVerified) {
+            return res.json({ success: false, message: "Please verify your email first" });
+        }
+
+        //checking duplicate doctor 
+        const checkemail = await doctorModel.findOne({email, name: { $exists: true, $ne: null }});
+        if(checkemail) {
+            return res.json({ success: false, message: "Doctor Already Exist ! Please Login :)" });
+        }
+
+        // Validating email
+        if (!validator.isEmail(email)) {
+            return res.json({ success: false, message: "Please enter a valid email" });
+        }
+
+        // Hashing doctor password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Upload image to cloudinary if provided
+        let imageURL = null;
+        if (imageFile) {
+            const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" });
+            imageURL = imageUpload.secure_url;
+        }
+
+        // Parse address only if it's a string
+        let parsedAddress = address;
+        try {
+            if (typeof address === 'string') {
+                parsedAddress = JSON.parse(address);
+            }
+        } catch (error) {
+            return res.json({ 
+                success: false, 
+                message: "Invalid address format"
+             });
+        }
+
+        const doctorData = {
+            name,
+            email,
+            image: imageURL,
+            password: hashedPassword,
+            speciality,
+            degree,
+            experience,
+            about,
+            fees,
+            address: parsedAddress,
+            approved: false, // New doctors are not approved by default
+            date: Date.now(),
+            emailVerified: true // Already verified
+        };
+
+        // Update the existing record with complete doctor data
+        const updatedDoctor = await doctorModel.findByIdAndUpdate(
+            existingDoctor._id,
+            doctorData,
+            { new: true }
+        );
+
+        res.json({ 
+            success: true, 
+            message: "Registration successful! Please wait for admin approval."
+         });
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
 
 //api for doctor login in the admin panel
 
@@ -14,6 +236,11 @@ const loginDoctor = async(req,res) => {
 
     if(!doctor) {
       return res.json({ success: false, message: "Invalid Credentials :)" });
+    }
+
+    // Check if doctor is approved
+    if(!doctor.approved) {
+      return res.json({ success: false, message: "Your account is pending approval. Please contact admin." });
     }
 
     const isMatch = await bcrypt.compare(password,doctor.password);
@@ -54,6 +281,20 @@ const changeAvailability = async (req, res) => {
       { new: true }  
     );
 
+    // Log the availability change
+    await logAdminAction(
+      'CHANGE_DOCTOR_AVAILABILITY',
+      `Changed availability for Dr. ${docData.name} to ${updatedDoctor.available ? 'Available' : 'Unavailable'}`,
+      docId,
+      docData.name,
+      {
+        previousStatus: docData.available,
+        newStatus: updatedDoctor.available,
+        doctorEmail: docData.email
+      },
+      req
+    );
+
     res.json({ success: true, message: "Availability Updated", doctor: updatedDoctor });
   } catch (error) {
     console.log(error);
@@ -61,10 +302,10 @@ const changeAvailability = async (req, res) => {
   }
 };
 
-//get all doctors (for admin panel)
+//get all doctors (for frontend - only approved doctors with profile pictures)
 const getDoctors = async (req, res) => {
     try {
-        const doctors = await doctorModel.find({}).select(['-password -email']);  
+        const doctors = await doctorModel.find({ approved: true, image: { $ne: null } }).select(['-password -email']);  
 
         res.json({ success: true, doctors}); 
     } catch (error) {
@@ -226,5 +467,29 @@ const updateDoctorProfile = async (req,res) => {
   }
 }
 
+// api to update doctor profile picture
+const updateProfilePicture = async (req,res) => {
+  try {
+    const {docId} = req.body;
+    const imageFile = req.file;
 
-export { changeAvailability ,getDoctors , loginDoctor , appointmentsDoctor, appointmentCancel, appointmentComplete,doctorDashboard, updateDoctorProfile, doctorProfile};
+    if (!imageFile) {
+      return res.json({ success: false, message: "No image provided" });
+    }
+
+    // Upload image to cloudinary
+    const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" });
+    const imageURL = imageUpload.secure_url;
+
+    await doctorModel.findByIdAndUpdate(docId, { image: imageURL });
+
+    res.json({success: true, message: "Profile picture updated successfully", image: imageURL});
+    
+  } catch (error) {
+    console.error(error.message);
+    res.json({success: false, message: error.message});
+  }
+}
+
+
+export { signupDoctor, changeAvailability ,getDoctors , loginDoctor , appointmentsDoctor, appointmentCancel, appointmentComplete,doctorDashboard, updateDoctorProfile, doctorProfile, updateProfilePicture, sendSignupOTP, verifySignupOTP};

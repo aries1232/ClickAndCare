@@ -3,11 +3,90 @@
 @tailwind components;
 @tailwind utilities;
 
-::-webkit-scrollbar{
-    @apply hidden
+/* Dark theme scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
 }
 
-*{
-    font-family:Carme;
+::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Global dark theme styles */
+* {
+    font-family: Carme;
+}
+
+body {
+    background-color: #111827;
+    color: #f9fafb;
+}
+
+/* Input field styles - prevent color changes */
+input, textarea, select {
+    background-color: rgba(55, 65, 81, 0.5) !important;
+    color: white !important;
+    border-color: #4b5563 !important;
+}
+
+/* Prevent autofill color changes */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px rgba(55, 65, 81, 0.5) inset !important;
+    -webkit-text-fill-color: white !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Placeholder color */
+input::placeholder,
+textarea::placeholder {
+    color: #9ca3af !important;
+}
+
+/* Focus states */
+input:focus,
+textarea:focus,
+select:focus {
+    background-color: rgba(55, 65, 81, 0.7) !important;
+    color: white !important;
+    border-color: #8b5cf6 !important;
+    outline: none !important;
+}
+
+/* Toast notifications dark theme */
+.Toastify__toast-container {
+    background-color: #1f2937;
+}
+
+.Toastify__toast {
+    background-color: #374151;
+    color: #f9fafb;
+}
+
+.Toastify__toast--success {
+    background-color: #065f46;
+}
+
+.Toastify__toast--error {
+    background-color: #7f1d1d;
+}
+
+.Toastify__toast--warning {
+    background-color: #92400e;
+}
+
+.Toastify__toast--info {
+    background-color: #1e40af;
 }
 
