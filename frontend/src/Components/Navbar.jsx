@@ -1,18 +1,22 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import  { assets } from "../assets/assets.js";
 import { NavLink, useNavigate } from "react-router-dom";
 import {AppContext }from '../context/AppContext'
+import { useSocketContext } from '../context/SocketContext'
 import { toast } from "react-toastify";
 import DefaultAvatar from "../components/DefaultAvatar.jsx";
 import DarkModeToggle from "./DarkModeToggle.jsx";
+import axios from "axios";
 
 const Navbar = () => {
   //naviage hook
   const navigate = useNavigate();
-  const {token,setToken,userData}= useContext(AppContext)
+  const {token,setToken,userData, backendUrl}= useContext(AppContext)
+  const { socket } = useSocketContext();
   //use state hook
   const [showMenu, setShowMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
   
   const logout =()=>{
     setToken(false)
@@ -30,6 +34,114 @@ const Navbar = () => {
       navigate('/my-appointments')
     }
   }
+
+  // Fetch total unread count
+  const getTotalUnreadCount = async () => {
+    if (!token || !backendUrl) {
+      // console.log('Navbar: Missing token or backendUrl, skipping unread count fetch');
+      return;
+    }
+    
+    if (!userData?._id) {
+      // console.log('Navbar: User data not loaded yet, skipping unread count fetch');
+      return;
+    }
+    
+    try {
+      // console.log('Navbar: Fetching unread counts for user:', userData._id);
+      const { data } = await axios.get(backendUrl + "/api/user/unread-counts", {
+        headers: { token },
+      });
+      if (data.success) {
+        const total = Object.values(data.unreadCounts).reduce((sum, count) => sum + count, 0);
+        setTotalUnreadCount(total);
+        // console.log('Navbar: Fetched total unread count:', total, 'from unreadCounts:', data.unreadCounts);
+      } else {
+        // console.log('Navbar: Failed to fetch unread counts:', data.message);
+        setTotalUnreadCount(0);
+      }
+    } catch (error) {
+      // console.error('Navbar: Error fetching unread counts:', error);
+      setTotalUnreadCount(0);
+    }
+  };
+
+  // Listen for unread count updates and custom events
+  useEffect(() => {
+    const handleUnreadCountUpdate = (event) => {
+      const { unreadCounts: newUnreadCounts } = event.detail;
+      const currentUserId = userData?._id || userData?.id;
+      
+      // console.log('Navbar: Received unread count update:', { newUnreadCounts, currentUserId });
+      
+      if (newUnreadCounts && newUnreadCounts[currentUserId] !== undefined) {
+        // Calculate new total from ALL appointment counts (not just current user's count)
+        const newTotal = Object.values(newUnreadCounts).reduce((sum, count) => sum + count, 0);
+        setTotalUnreadCount(newTotal);
+        // console.log('Navbar: Updated total unread count to:', newTotal, 'from counts:', newUnreadCounts);
+      }
+    };
+
+    const handleResetUnreadCount = (event) => {
+      const { appointmentId } = event.detail;
+      // console.log('Navbar: Received reset unread count event for appointment:', appointmentId);
+      // Fetch fresh unread count from server to ensure accuracy
+      getTotalUnreadCount();
+    };
+
+    // Listen for new messages to update unread count in real-time
+    const handleNewMessage = (event) => {
+      const { appointmentId, message } = event.detail;
+      const currentUserId = userData?._id || userData?.id;
+      
+      // console.log('Navbar: Received new message:', { 
+      //   appointmentId, 
+      //   messageSender: message.sender, 
+      //   currentUser: currentUserId,
+      //   isFromOther: message.sender !== currentUserId
+      // });
+      
+      // Only update unread count if message is from the other person
+      if (message.sender !== currentUserId) {
+        // console.log('Navbar: New message received, fetching updated total unread count');
+        // Fetch the actual total unread count from server to ensure accuracy
+        getTotalUnreadCount();
+      }
+    };
+
+    window.addEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+    window.addEventListener('resetUnreadCount', handleResetUnreadCount);
+    window.addEventListener('newMessage', handleNewMessage);
+    
+    return () => {
+      window.removeEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+      window.removeEventListener('resetUnreadCount', handleResetUnreadCount);
+      window.removeEventListener('newMessage', handleNewMessage);
+    };
+  }, [userData?._id, userData?.id, token, backendUrl]);
+
+  // Fetch unread count when userData is loaded and set up periodic refresh
+  useEffect(() => {
+    if (token && backendUrl && userData?._id) {
+      // console.log('Navbar: User data loaded, fetching unread counts...');
+      getTotalUnreadCount();
+      
+      // Set up periodic refresh every 30 seconds to ensure sync
+      const intervalId = setInterval(() => {
+        // console.log('Navbar: Periodic unread count refresh');
+        getTotalUnreadCount();
+      }, 30000); // 30 seconds
+      
+      return () => clearInterval(intervalId);
+    } else {
+      // console.log('Navbar: Waiting for user data...', { 
+      //   token: !!token, 
+      //   backendUrl: !!backendUrl, 
+      //   userId: userData?._id,
+      //   userDataLoaded: !!userData 
+      // });
+    }
+  }, [token, backendUrl, userData]);
 
   // Function to render profile image or default avatar
   const renderProfileImage = (size = 'w-10 h-10') => {
@@ -80,7 +192,14 @@ const Navbar = () => {
               onMouseEnter={() => setShowUserMenu(true)}
               onMouseLeave={() => setShowUserMenu(false)}
             >
-              {renderProfileImage()}
+              <div className="relative">
+                {renderProfileImage()}
+                {totalUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                  </span>
+                )}
+              </div>
             </div>
             
             {/* User Menu Dropdown */}
@@ -111,12 +230,17 @@ const Navbar = () => {
                 
                 <button
                   onClick={() => handleUserMenuClick('appointments')}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 dark:text-white hover:bg-primary hover:text-white transition-colors duration-200"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 dark:text-white hover:bg-primary hover:text-white transition-colors duration-200 relative"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   My Appointments
+                  {totalUnreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                      {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                    </span>
+                  )}
                 </button>
                 
                 <hr className="my-2 border-gray-100 dark:border-gray-700" />
@@ -173,9 +297,14 @@ const Navbar = () => {
                     </button>
                     <button 
                       onClick={() => { handleUserMenuClick('appointments'); setShowMenu(false); }}
-                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-white hover:bg-primary hover:text-white rounded transition-colors duration-200"
+                      className="w-full text-left px-4 py-2 text-gray-700 dark:text-white hover:bg-primary hover:text-white rounded transition-colors duration-200 relative"
                     >
                       My Appointments
+                      {totalUnreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                          {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                        </span>
+                      )}
                     </button>
                     <button 
                       onClick={() => { logout(); setShowMenu(false); }}

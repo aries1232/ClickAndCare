@@ -1,5 +1,5 @@
 import express from 'express'
-import {allDoctors,loginAdmin, appointmentsAdmin , appointmentCancel , adminDashboard, approveDoctor, getPendingDoctors, approveExistingDoctors, addDoctor, deleteDoctor, getAdminLogs, adminForgotPassword, adminResetPassword, getAdminProfile, addRecoveryEmail, removeRecoveryEmail, toggleRecoveryEmail, changeAdminEmail} from '../controllers/adminController.js'
+import {allDoctors,loginAdmin, appointmentsAdmin , appointmentCancel , adminDashboard, approveDoctor, getPendingDoctors, approveExistingDoctors, addDoctor, deleteDoctor, getAdminLogs, adminForgotPassword, adminResetPassword, getAdminProfile, addRecoveryEmail, removeRecoveryEmail, toggleRecoveryEmail, changeAdminEmail, updateDoctorInfo, updateDoctorProfilePicture, toggleDoctorVisibility} from '../controllers/adminController.js'
 import {changeAvailability} from '../controllers/doctorController.js'
 import upload from '../middlewares/multer.js'
 import adminAuth from '../middlewares/adminAuth.js'
@@ -23,6 +23,9 @@ adminRouter.post('/approve-doctor',adminAuth,approveDoctor);
 adminRouter.get('/pending-doctors',adminAuth,getPendingDoctors);
 adminRouter.post('/approve-existing-doctors',adminAuth,approveExistingDoctors);
 adminRouter.post('/add-doctor',adminAuth,upload.single('image'),addDoctor);
+adminRouter.put('/update-doctor-info',adminAuth,updateDoctorInfo);
+adminRouter.put('/update-doctor-picture',adminAuth,upload.single('image'),updateDoctorProfilePicture);
+adminRouter.post('/toggle-doctor-visibility',adminAuth,toggleDoctorVisibility);
 adminRouter.delete('/delete-doctor/:doctorId',adminAuth,deleteDoctor);
 adminRouter.get('/logs',adminAuth,getAdminLogs);
 

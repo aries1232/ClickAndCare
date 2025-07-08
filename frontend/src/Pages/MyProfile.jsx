@@ -14,22 +14,12 @@ const MyProfile = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Debug logging
   useEffect(() => {
-    console.log("MyProfile Debug Info:", {
-      token: !!token,
-      userData: userData,
-      backendUrl: backendUrl
-    });
-    
     if (token && !userData) {
-      console.log("Token exists but no userData, loading profile...");
       loadUserProfileData().finally(() => setIsLoading(false));
     } else if (!token) {
-      console.log("No token found, user not logged in");
       setIsLoading(false);
     } else {
-      console.log("User data available");
       setIsLoading(false);
     }
   }, [token, userData, loadUserProfileData, backendUrl]);

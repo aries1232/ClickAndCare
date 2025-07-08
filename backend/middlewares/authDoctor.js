@@ -3,23 +3,23 @@ import jwt from 'jsonwebtoken'
 //doctor authentication middleware logic
 const authDoctor = async(req,res,next) => {
     try{
-         const {dtoken} = req.headers
-         if(!dtoken) {
+         // Check for token in different case variations
+         const dToken = req.headers.dtoken || req.headers.dToken || req.headers.DToken || req.headers.DTOKEN;
+         
+         if(!dToken) {
             return res.json({success:false,message:"Unauthorized Access! Login Again"});
          }
-         const token_decode =jwt.verify(dtoken,process.env.JWT_SECRET)
-         req.body.docId= token_decode.id
+         
+         const token_decode =jwt.verify(dToken,process.env.JWT_SECRET)
+         req.doctor = { id: token_decode.id }
          next()
-
 
     }
     catch(error) {
-        console.log(error);
+        console.log('AuthDoctor Error:', error.message);
         res.json({success:false,message:error.message});
 
     }
 } 
-
-
 
 export default authDoctor

@@ -1,10 +1,24 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { DoctorContext } from '../context/DoctorContext';
 import { assets } from '../assets/assets';
 
 const DoctorSidebar = () => {
-    const { setDToken } = useContext(DoctorContext);
+    const { setDToken, totalUnreadCount, getUnreadCounts, dToken } = useContext(DoctorContext);
+
+    // Fetch unread counts immediately when sidebar mounts
+    useEffect(() => {
+        if (dToken) {
+            getUnreadCounts();
+        }
+    }, [dToken, getUnreadCounts]);
+
+    // Debug total unread count
+    useEffect(() => {
+        if (totalUnreadCount > 0) {
+            console.log('DoctorSidebar: Total unread count:', totalUnreadCount);
+        }
+    }, [totalUnreadCount]);
 
     const handleLogout = () => {
         setDToken("");
@@ -21,6 +35,7 @@ const DoctorSidebar = () => {
             path: "/doctor/appointments",
             name: "Appointments",
             icon: assets.appointment_icon,
+            showBadge: true,
         },
         {
             path: "/doctor/patients",
@@ -61,7 +76,14 @@ const DoctorSidebar = () => {
                                     }`
                                 }
                             >
-                                <img src={item.icon} alt="" className="w-5 h-5 mr-3" style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }} />
+                                <div className="relative">
+                                    <img src={item.icon} alt="" className="w-5 h-5 mr-3" style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }} />
+                                    {item.showBadge && totalUnreadCount > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                        </span>
+                                    )}
+                                </div>
                                 {item.name}
                             </NavLink>
                         </li>

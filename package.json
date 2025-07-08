@@ -13,7 +13,8 @@
     "run:all": "start cmd /k \"npm run start:backend\" && start cmd /k \"npm run dev:frontend\" && start cmd /k \"npm run dev:admin\"",
     "lint:frontend": "cd frontend && npm run lint",
     "lint:admin": "cd admin && npm run lint",
-    "lint:all": "npm run lint:frontend && npm run lint:admin"
+    "lint:all": "npm run lint:frontend && npm run lint:admin",
+    "dev-all": "concurrently \"cd frontend && npm run dev\" \"cd admin && npm run dev\" \"cd backend && npm start\""
   },
   "keywords": ["healthcare", "appointment", "doctor", "patient"],
   "author": "",
