@@ -17,6 +17,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Success from "./Pages/Success.jsx";
 import Cancel from "./Pages/Cancel.jsx";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { DarkModeProvider } from "./context/DarkModeContext";
 
 const App = () => {
@@ -26,13 +27,14 @@ const App = () => {
   const hideNavbarFooter = location.pathname === "/login" || location.pathname === "/register" || location.pathname === "/forgot-password";
 
   return (
-    <DarkModeProvider>
-      <div className="dark:bg-gray-900 dark:text-white min-h-screen">
-        <div className="mx-4 sm:mx-[10%]">
-        <ToastContainer />
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <DarkModeProvider>
+        <div className="dark:bg-gray-900 dark:text-white min-h-screen">
+          <div className="mx-4 sm:mx-[10%]">
+          <ToastContainer />
 
-        {/* Show Navbar only if not on Login/Register pages */}
-        {!hideNavbarFooter && <Navbar />}
+          {/* Show Navbar only if not on Login/Register pages */}
+          {!hideNavbarFooter && <Navbar />}
 
         <div 
           key={location.pathname}
@@ -63,9 +65,10 @@ const App = () => {
 
         {/* Show Footer only if not on Login/Register pages */}
         {!hideNavbarFooter && <Footer />}
+          </div>
         </div>
-      </div>
-    </DarkModeProvider>
+      </DarkModeProvider>
+    </GoogleOAuthProvider>
   );
 };
 

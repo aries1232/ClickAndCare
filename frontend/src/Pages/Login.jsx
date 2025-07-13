@@ -4,6 +4,7 @@ import axios from 'axios'
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png'
+import { GoogleLogin } from '@react-oauth/google'
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext)
@@ -12,6 +13,7 @@ const Login = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const onSubmitHandler = async (e) => {
     e.preventDefault()
@@ -37,6 +39,36 @@ const Login = () => {
       toast.error(error.response?.data?.message || 'Login failed. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      setGoogleLoading(true)
+      const { credential } = credentialResponse
+      
+      // Decode the JWT token from Google
+      const decodedToken = JSON.parse(atob(credential.split('.')[1]))
+      
+      const { data } = await axios.post(backendUrl + '/api/user/google-login', {
+        googleId: decodedToken.sub,
+        email: decodedToken.email,
+        name: decodedToken.name,
+        imageUrl: decodedToken.picture
+      })
+      
+      if (data.success) {
+        localStorage.setItem('token', data.token)
+        setToken(data.token)
+        toast.success("Google login successful")
+      } else {
+        toast.error(data.message || "Failed to login with Google")
+      }
+    } catch (error) {
+      console.error('Google login error:', error)
+      toast.error(error.response?.data?.message || 'Google login failed. Please try again.')
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
@@ -147,6 +179,35 @@ const Login = () => {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-700" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">Or continue with</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Google Login */}
+          <div className="mt-6">
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={() => {
+                  toast.error('Google login failed. Please try again.');
+                }}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                text="signin_with"
+                logo_alignment="center"
+              />
+            </div>
+          </div>
 
           {/* Divider */}
           <div className="mt-6">
