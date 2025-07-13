@@ -104,14 +104,14 @@ A seamless doctor appointment booking platform designed to make healthcare acces
 2. **Frontend Environment Variables**
    Create a `.env` file in the `frontend` directory:
    ```env
-   REACT_APP_API_URL=http://localhost:5000/api
+   VITE_BACKEND_URL=http://localhost:5000
    REACT_APP_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
    ```
 
 3. **Admin Panel Environment Variables**
    Create a `.env` file in the `admin` directory:
    ```env
-   REACT_APP_API_URL=http://localhost:5000/api
+   VITE_BACKEND_URL=http://localhost:5000
    ```
 
 ### Running the Application
@@ -153,18 +153,69 @@ npm start
 
 ## 🚀 Deployment
 
-### Backend Deployment (Render)
-- The backend is deployed on Render
-- Environment variables are configured in Render dashboard
-- Auto-deploys on push to main branch
+### Render Deployment (Recommended)
 
-### Frontend Deployment
-- Can be deployed on Vercel, Netlify, or any static hosting service
-- Build the frontend and upload the `build` folder
+This project is configured for easy deployment on Render. The `render.yaml` file contains all the necessary configuration.
 
-### Admin Panel Deployment
-- Can be deployed on Vercel, Netlify, or any static hosting service
-- Build the admin panel and upload the `build` folder
+#### Automatic Deployment Steps:
+
+1. **Connect to Render:**
+   - Go to [render.com](https://render.com)
+   - Sign up/Login with your GitHub account
+   - Click "New +" and select "Blueprint"
+
+2. **Deploy from Repository:**
+   - Connect your GitHub repository
+   - Render will automatically detect the `render.yaml` configuration
+   - Click "Apply" to start deployment
+
+3. **Environment Variables:**
+   Set these environment variables in Render dashboard:
+   ```env
+   NODE_ENV=production
+   MONGODB_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+   CLOUDINARY_API_KEY=your_cloudinary_key
+   CLOUDINARY_API_SECRET=your_cloudinary_secret
+   STRIPE_SECRET_KEY=your_stripe_secret_key
+   EMAIL_USER=your_email
+   EMAIL_PASS=your_email_password
+   PORT=10000
+   ```
+
+4. **Build & Start Commands:**
+   - **Build Command:** `npm run build`
+   - **Start Command:** `npm start`
+
+#### Manual Deployment:
+
+If you prefer manual deployment:
+
+1. **Create a Web Service:**
+   - Environment: Node
+   - Build Command: `npm run build`
+   - Start Command: `npm start`
+
+2. **Set Environment Variables** (same as above)
+
+3. **Deploy**
+
+### Alternative Deployment Options
+
+#### Frontend Deployment
+- **Vercel:** Connect repository and deploy
+- **Netlify:** Drag and drop the `frontend/dist` folder
+- **GitHub Pages:** Use GitHub Actions for deployment
+
+#### Backend Deployment
+- **Railway:** Connect repository and set environment variables
+- **Heroku:** Use Heroku CLI or connect GitHub repository
+- **DigitalOcean App Platform:** Connect repository and configure
+
+#### Admin Panel Deployment
+- **Vercel:** Connect repository and deploy
+- **Netlify:** Drag and drop the `admin/dist` folder
 
 ## 🛠️ Tech Stack
 
@@ -199,10 +250,16 @@ ClickAndCare/
 ├── backend/           # Node.js/Express backend API
 ├── admin/            # React admin panel
 ├── package.json      # Root package.json
+├── render.yaml       # Render deployment configuration
 └── README.md         # This file
 ```
 
 ## 🔧 Available Scripts
+
+### Root (Monorepo)
+- `npm run build` - Build all applications for production
+- `npm start` - Start the backend server
+- `npm run install:all` - Install dependencies for all applications
 
 ### Backend
 - `npm run dev` - Start development server with nodemon
