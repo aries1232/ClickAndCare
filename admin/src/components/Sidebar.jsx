@@ -15,12 +15,7 @@ const Sidebar = () => {
         }
     }, [dToken, getUnreadCounts]);
 
-    // Debug total unread count
-    useEffect(() => {
-        if (dToken && totalUnreadCount > 0) {
-            console.log('Sidebar: Total unread count for doctor:', totalUnreadCount);
-        }
-    }, [totalUnreadCount, dToken]);
+
 
     return (
         <div className="h-screen bg-gray-800/50 backdrop-blur-sm border-r border-gray-700 p-2 flex flex-col flex-none overflow-hidden 

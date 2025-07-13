@@ -545,20 +545,15 @@ const getAppointmentChatMessages = async (req, res) => {
 const getUnreadCounts = async (req, res) => {
   try {
     const docId = req.doctor.id;
-    console.log('Doctor API: Getting unread counts for doctor:', docId);
 
     // Get all appointments for the doctor
     const appointments = await appointmentModel.find({ docId });
-    console.log('Doctor API: Found appointments:', appointments.length);
 
     const unreadCounts = {};
 
     for (const appointment of appointments) {
       const conversation = await Conversation.findOne({ appointmentId: appointment._id });
       if (conversation) {
-        console.log('Doctor API: Found conversation for appointment:', appointment._id);
-        console.log('Doctor API: Conversation messages count:', conversation.messages.length);
-        
         // Get messages where doctor is the receiver and sender is not the doctor
         const actualUnreadMessages = await Message.find({
           _id: { $in: conversation.messages },
@@ -570,32 +565,18 @@ const getUnreadCounts = async (req, res) => {
         const actualUnreadCount = actualUnreadMessages.length;
         const storedUnreadCount = conversation.unreadCount.get(docId.toString()) || 0;
         
-        console.log('Doctor API: Found', actualUnreadCount, 'unread messages for doctor', docId);
-        console.log('Doctor API: Unread message details:', actualUnreadMessages.map(msg => ({
-          id: msg._id,
-          senderId: msg.senderId,
-          receiverId: msg.receiverId,
-          status: msg.status
-        })));
-        
         // If there's a mismatch, update the stored count
         if (actualUnreadCount !== storedUnreadCount) {
-          console.log('Doctor API: Syncing unread count - stored:', storedUnreadCount, 'actual:', actualUnreadCount);
           conversation.unreadCount.set(docId.toString(), actualUnreadCount);
           await conversation.save();
         }
         
         unreadCounts[appointment._id.toString()] = actualUnreadCount;
-        
-        console.log('Doctor API: Appointment', appointment._id, 'has', actualUnreadCount, 'unread messages (synced)');
-        console.log('Doctor API: Conversation unreadCount map:', conversation.unreadCount);
       } else {
         unreadCounts[appointment._id.toString()] = 0;
-        console.log('Doctor API: No conversation found for appointment', appointment._id);
       }
     }
 
-    console.log('Doctor API: Returning unread counts:', unreadCounts);
     res.json({ success: true, unreadCounts });
   } catch (error) {
     console.error('Error getting unread counts:', error);

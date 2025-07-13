@@ -29,12 +29,7 @@ const DoctorContextProvider = (props) => {
   // Calculate total unread count
   const totalUnreadCount = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
 
-  // Debug total unread count changes
-  useEffect(() => {
-    if (totalUnreadCount > 0) {
-      console.log('DoctorContext: Total unread count:', totalUnreadCount);
-    }
-  }, [totalUnreadCount]);
+
 
   const getUnreadCounts = async () => {
     try {

@@ -43,6 +43,7 @@ const MyAppointment = () => {
   };
 
   const handlePaynow = async (appointmentId) => {
+    console.log('Stripe Key:', import.meta.env.VITE_STRIPE_KEY_ID);
     const stripe = await loadStripe(import.meta.env.VITE_STRIPE_KEY_ID);
 
     try {

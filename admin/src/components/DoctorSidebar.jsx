@@ -13,12 +13,7 @@ const DoctorSidebar = () => {
         }
     }, [dToken, getUnreadCounts]);
 
-    // Debug total unread count
-    useEffect(() => {
-        if (totalUnreadCount > 0) {
-            console.log('DoctorSidebar: Total unread count:', totalUnreadCount);
-        }
-    }, [totalUnreadCount]);
+
 
     const handleLogout = () => {
         setDToken("");

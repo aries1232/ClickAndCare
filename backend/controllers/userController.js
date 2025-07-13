@@ -421,7 +421,12 @@ const makePayment = async (req, res) => {
       return res.json({ success: false, message: "Payment already completed" });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    if (!process.env.STRIPE_SECRET) {
+      console.error('STRIPE_SECRET is not set in environment variables');
+      return res.json({ success: false, message: "Payment service configuration error" });
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -614,20 +619,15 @@ const getAppointmentChatMessages = async (req, res) => {
 const getUnreadCounts = async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log('User API: Getting unread counts for user:', userId);
 
     // Get all appointments for the user
     const appointments = await appointmentModel.find({ userId });
-    console.log('User API: Found appointments:', appointments.length);
 
     const unreadCounts = {};
 
     for (const appointment of appointments) {
       const conversation = await Conversation.findOne({ appointmentId: appointment._id });
       if (conversation) {
-        console.log('User API: Found conversation for appointment:', appointment._id);
-        console.log('User API: Conversation messages count:', conversation.messages.length);
-        
         // Get messages where user is the receiver and sender is not the user
         const actualUnreadMessages = await Message.find({
           _id: { $in: conversation.messages },
@@ -639,33 +639,18 @@ const getUnreadCounts = async (req, res) => {
         const actualUnreadCount = actualUnreadMessages.length;
         const storedUnreadCount = conversation.unreadCount.get(userId.toString()) || 0;
         
-        console.log('User API: Found', actualUnreadCount, 'unread messages for user', userId);
-        console.log('User API: Unread message details:', actualUnreadMessages.map(msg => ({
-          id: msg._id,
-          senderId: msg.senderId,
-          receiverId: msg.receiverId,
-          status: msg.status
-        })));
-        
         // If there's a mismatch, update the stored count
         if (actualUnreadCount !== storedUnreadCount) {
-          console.log('User API: Syncing unread count - stored:', storedUnreadCount, 'actual:', actualUnreadCount);
           conversation.unreadCount.set(userId.toString(), actualUnreadCount);
           await conversation.save();
         }
         
         unreadCounts[appointment._id.toString()] = actualUnreadCount;
-        
-        console.log('User API: Appointment', appointment._id, 'has', actualUnreadCount, 'unread messages (synced)');
-        console.log('User API: Conversation unreadCount map:', conversation.unreadCount);
-        console.log('User API: User ID being checked:', userId.toString());
       } else {
         unreadCounts[appointment._id.toString()] = 0;
-        console.log('User API: No conversation found for appointment', appointment._id);
       }
     }
 
-    console.log('User API: Returning unread counts:', unreadCounts);
     res.json({ success: true, unreadCounts });
   } catch (error) {
     console.error('Error getting unread counts:', error);
