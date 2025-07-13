@@ -47,21 +47,21 @@ const Login = () => {
   }, [token, navigate])
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <img src={logo} alt="Click&Care" className="w-32 h-16 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your account to continue</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back</h1>
+          <p className="text-gray-600 dark:text-gray-300">Sign in to your account to continue</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
           <form onSubmit={onSubmitHandler} className="space-y-6">
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -72,10 +72,10 @@ const Login = () => {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white dark:bg-gray-900 dark:text-white"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                   </svg>
                 </div>
@@ -84,7 +84,7 @@ const Login = () => {
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -95,12 +95,12 @@ const Login = () => {
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none pr-12 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none pr-12 bg-white dark:bg-gray-900 dark:text-white"
               />
                 <button 
                   type="button" 
                   onClick={() => setShowPassword((prev) => !prev)} 
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,10 +152,10 @@ const Login = () => {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-gray-300 dark:border-gray-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">New to Click&Care?</span>
+                <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">New to Click&Care?</span>
               </div>
             </div>
           </div>
@@ -164,7 +164,7 @@ const Login = () => {
           <div className="mt-6">
             <button
             onClick={() => navigate('/register')}
-              className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200"
+              className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200"
             >
               Create an account
             </button>
@@ -173,7 +173,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             By signing in, you agree to our{' '}
             <a href="#" className="text-primary hover:text-green-600 transition-colors">Terms of Service</a>
             {' '}and{' '}
