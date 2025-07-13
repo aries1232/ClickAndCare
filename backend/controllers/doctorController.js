@@ -6,6 +6,8 @@ import validator from 'validator';
 import { v2 as cloudinary } from 'cloudinary';
 import nodemailer from 'nodemailer';
 import { logAdminAction } from '../utils/adminLogger.js';
+import Conversation from '../models/Conversation.js';
+import Message from '../models/Message.js';
 
 // Generate OTP
 const generateOTP = () => {
@@ -251,7 +253,6 @@ const loginDoctor = async(req,res) => {
     const isMatch = await bcrypt.compare(password,doctor.password);
 
     if(isMatch) {
-
       const token = jwt.sign({id:doctor._id},process.env.JWT_SECRET);
       res.json({success:true,token});
        
@@ -310,7 +311,11 @@ const changeAvailability = async (req, res) => {
 //get all doctors (for frontend - only approved doctors with profile pictures)
 const getDoctors = async (req, res) => {
     try {
-        const doctors = await doctorModel.find({ approved: true, image: { $ne: null } }).select(['-password -email']);  
+        const doctors = await doctorModel.find({ 
+            approved: true, 
+            image: { $ne: null },
+            visible: { $ne: false } // Only return visible doctors
+        }).select(['-password -email']);  
 
         res.json({ success: true, doctors}); 
     } catch (error) {
@@ -323,7 +328,7 @@ const getDoctors = async (req, res) => {
 
 const appointmentsDoctor = async(req,res) => {
   try {
-    const {docId} = req.body
+    const docId = req.doctor.id;
 
     const appointments = await appointmentModel.find({docId}); 
 
@@ -341,7 +346,8 @@ const appointmentsDoctor = async(req,res) => {
 const appointmentComplete = async(req,res)=>{
   try {
 
-    const {docId, appointmentId} = req.body;
+    const docId = req.doctor.id;
+    const { appointmentId } = req.body;
 
     const appointmentData = await appointmentModel.findById(appointmentId);
 
@@ -368,7 +374,8 @@ const appointmentComplete = async(req,res)=>{
 const appointmentCancel = async(req,res)=>{
   try {
 
-    const {docId, appointmentId} = req.body;
+    const docId = req.doctor.id;
+    const { appointmentId } = req.body;
 
     const appointmentData = await appointmentModel.findById(appointmentId);
 
@@ -396,7 +403,7 @@ const appointmentCancel = async(req,res)=>{
 const doctorDashboard = async(req,res) => {
   try {
 
-    const {docId} = req.body;
+    const docId = req.doctor.id;
 
     const appointments = await appointmentModel.find({docId});
 
@@ -442,7 +449,7 @@ const doctorDashboard = async(req,res) => {
 const doctorProfile = async (req,res) => {
   try {
 
-    const {docId} =req.body;
+    const docId = req.doctor.id;
 
     const doctorData = await doctorModel.findById(docId).select('-password');
 
@@ -458,14 +465,13 @@ const doctorProfile = async (req,res) => {
 const updateDoctorProfile = async (req,res) => {
   try {
 
-    const {docId, fees, address, available,about} = req.body;
+    const docId = req.doctor.id;
+    const { fees, address, available, about } = req.body;
 
     await doctorModel.findByIdAndUpdate(docId,{fees,address,available,about});
 
     res.json({success:true,message:"Profile Updated"})
-    
   } catch (error) {
-
     console.error(error.message);
     res.json({success:false,message:error.message})
     
@@ -475,26 +481,107 @@ const updateDoctorProfile = async (req,res) => {
 // api to update doctor profile picture
 const updateProfilePicture = async (req,res) => {
   try {
-    const {docId} = req.body;
+    const docId = req.doctor.id;
     const imageFile = req.file;
 
     if (!imageFile) {
-      return res.json({ success: false, message: "No image provided" });
+      return res.json({ success: false, message: "No image file provided" });
     }
 
     // Upload image to cloudinary
-    const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" });
+    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+      resource_type: "image",
+    });
     const imageURL = imageUpload.secure_url;
 
+    // Update doctor profile with new image
     await doctorModel.findByIdAndUpdate(docId, { image: imageURL });
 
-    res.json({success: true, message: "Profile picture updated successfully", image: imageURL});
-    
+    res.json({ success: true, message: "Profile picture updated", imageURL });
   } catch (error) {
     console.error(error.message);
-    res.json({success: false, message: error.message});
+    res.json({ success: false, message: error.message });
   }
 }
 
+// Fetch chat messages for an appointment
+const getAppointmentChatMessages = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    if (!appointmentId) return res.status(400).json({ success: false, message: 'Missing appointmentId' });
+    
+    const conversation = await Conversation.findOne({ appointmentId })
+      .populate({
+        path: 'messages',
+        options: { sort: { createdAt: 1 } },
+      });
+    
+    if (!conversation) return res.status(404).json({ success: false, message: 'No chat found for this appointment' });
+    
+    // Transform messages to match ChatBox expected format
+    const transformedMessages = conversation.messages.map(msg => ({
+      _id: msg._id,
+      sender: msg.senderId,
+      message: msg.message,
+      messageType: msg.messageType,
+      fileUrl: msg.fileUrl,
+      fileName: msg.fileName,
+      fileSize: msg.fileSize,
+      status: msg.status,
+      deliveredAt: msg.deliveredAt,
+      readAt: msg.readAt,
+      time: new Date(msg.createdAt).toLocaleTimeString(),
+      createdAt: msg.createdAt
+    }));
+    
+    res.json({ success: true, messages: transformedMessages });
+  } catch (err) {
+    console.error('Doctor API: Error in getAppointmentChatMessages:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-export { signupDoctor, changeAvailability ,getDoctors , loginDoctor , appointmentsDoctor, appointmentCancel, appointmentComplete,doctorDashboard, updateDoctorProfile, doctorProfile, updateProfilePicture, sendSignupOTP, verifySignupOTP};
+// Get unread counts for doctor's appointments
+const getUnreadCounts = async (req, res) => {
+  try {
+    const docId = req.doctor.id;
+
+    // Get all appointments for the doctor
+    const appointments = await appointmentModel.find({ docId });
+
+    const unreadCounts = {};
+
+    for (const appointment of appointments) {
+      const conversation = await Conversation.findOne({ appointmentId: appointment._id });
+      if (conversation) {
+        // Get messages where doctor is the receiver and sender is not the doctor
+        const actualUnreadMessages = await Message.find({
+          _id: { $in: conversation.messages },
+          receiverId: docId,
+          senderId: { $ne: docId }, // Ensure sender is not the doctor
+          status: { $ne: 'read' }
+        });
+        
+        const actualUnreadCount = actualUnreadMessages.length;
+        const storedUnreadCount = conversation.unreadCount.get(docId.toString()) || 0;
+        
+        // If there's a mismatch, update the stored count
+        if (actualUnreadCount !== storedUnreadCount) {
+          conversation.unreadCount.set(docId.toString(), actualUnreadCount);
+          await conversation.save();
+        }
+        
+        unreadCounts[appointment._id.toString()] = actualUnreadCount;
+      } else {
+        unreadCounts[appointment._id.toString()] = 0;
+      }
+    }
+
+    res.json({ success: true, unreadCounts });
+  } catch (error) {
+    console.error('Error getting unread counts:', error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export { signupDoctor, changeAvailability ,getDoctors , loginDoctor , appointmentsDoctor, appointmentCancel, appointmentComplete,doctorDashboard, updateDoctorProfile, doctorProfile, updateProfilePicture, sendSignupOTP, verifySignupOTP, getAppointmentChatMessages, getUnreadCounts};

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useContext } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
@@ -6,10 +6,11 @@ import { assets } from "../../assets/assets";
 import DefaultAvatar from '../../components/DefaultAvatar';
 
 const DoctorDashboard = () => {
-  const { dToken, dashData, getDashData, completeAppointment, cancelAppointment, getAppointments } =
+  const { dToken, dashData, getDashData, completeAppointment, cancelAppointment, getAppointments, appointments } =
     useContext(DoctorContext);
   const { slotDateFormat } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState('today');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (dToken) {
@@ -18,14 +19,50 @@ const DoctorDashboard = () => {
     }
   }, [dToken]);
 
-  // Filter appointments based on active tab
-  const getFilteredAppointments = () => {
-    if (!dashData?.latestAppointments) return [];
-    
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([getDashData(), getAppointments()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Calculate counts for each tab using appointments data
+  const tabCounts = useMemo(() => {
+    if (!appointments || appointments.length === 0) {
+      return {
+        today: 0,
+        upcoming: 0,
+        completed: 0,
+        cancelled: 0
+      };
+    }
+
     const today = new Date().toISOString().split('T')[0];
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    return dashData.latestAppointments.filter(appointment => {
+    return {
+      today: appointments.filter(apt => {
+        const appointmentDate = apt.slotDate.replace(/_/g, '-');
+        return appointmentDate === today && !apt.cancelled && !apt.isCompleted;
+      }).length,
+      upcoming: appointments.filter(apt => {
+        const appointmentDate = apt.slotDate.replace(/_/g, '-');
+        return appointmentDate > today && !apt.cancelled && !apt.isCompleted;
+      }).length,
+      completed: appointments.filter(apt => apt.isCompleted).length,
+      cancelled: appointments.filter(apt => apt.cancelled).length
+    };
+  }, [appointments]);
+
+  // Filter appointments based on active tab
+  const getFilteredAppointments = () => {
+    if (!appointments || appointments.length === 0) return [];
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    return appointments.filter(appointment => {
       const appointmentDate = appointment.slotDate.replace(/_/g, '-');
       
       switch (activeTab) {
@@ -58,7 +95,32 @@ const DoctorDashboard = () => {
       <div className="min-h-screen bg-gray-900 text-white p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Doctor Dashboard</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold text-white">Doctor Dashboard</h1>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              title="Refresh dashboard"
+            >
+              {isRefreshing ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh
+                </>
+              )}
+            </button>
+          </div>
           <p className="text-gray-400">Manage your appointments and patient care</p>
         </div>
 
@@ -123,7 +185,11 @@ const DoctorDashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-400">Today's Appointments</p>
                 <p className="text-2xl font-semibold text-white">
-                  {getFilteredAppointments().filter(apt => !apt.cancelled && !apt.isCompleted).length}
+                  {isRefreshing ? (
+                    <div className="animate-pulse bg-gray-600 h-8 w-12 rounded"></div>
+                  ) : (
+                    tabCounts.today
+                  )}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Pending today</p>
               </div>
@@ -148,10 +214,10 @@ const DoctorDashboard = () => {
           <div className="border-b border-gray-700">
             <nav className="flex space-x-8 px-6">
               {[
-                { id: 'today', label: 'Today', count: getFilteredAppointments().filter(apt => !apt.cancelled && !apt.isCompleted).length },
-                { id: 'upcoming', label: 'Upcoming', count: getFilteredAppointments().filter(apt => !apt.cancelled && !apt.isCompleted).length },
-                { id: 'completed', label: 'Completed', count: getFilteredAppointments().filter(apt => apt.isCompleted).length },
-                { id: 'cancelled', label: 'Cancelled', count: getFilteredAppointments().filter(apt => apt.cancelled).length }
+                { id: 'today', label: 'Today', count: tabCounts.today },
+                { id: 'upcoming', label: 'Upcoming', count: tabCounts.upcoming },
+                { id: 'completed', label: 'Completed', count: tabCounts.completed },
+                { id: 'cancelled', label: 'Cancelled', count: tabCounts.cancelled }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -164,7 +230,11 @@ const DoctorDashboard = () => {
                 >
                   {tab.label}
                   <span className="ml-2 bg-gray-700 text-gray-300 py-0.5 px-2.5 rounded-full text-xs">
-                    {tab.count}
+                    {isRefreshing ? (
+                      <div className="animate-pulse bg-gray-600 h-4 w-4 rounded"></div>
+                    ) : (
+                      tab.count
+                    )}
                   </span>
                 </button>
               ))}
@@ -173,7 +243,23 @@ const DoctorDashboard = () => {
 
           {/* Appointments List */}
           <div className="divide-y divide-gray-700">
-            {getFilteredAppointments().length > 0 ? (
+            {isRefreshing ? (
+              // Loading skeleton
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex items-center px-6 py-4">
+                  <div className="animate-pulse bg-gray-600 w-12 h-12 rounded-full"></div>
+                  <div className="flex-1 ml-4">
+                    <div className="animate-pulse bg-gray-600 h-4 w-32 rounded mb-2"></div>
+                    <div className="animate-pulse bg-gray-600 h-3 w-24 rounded mb-1"></div>
+                    <div className="animate-pulse bg-gray-600 h-3 w-20 rounded"></div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="animate-pulse bg-gray-600 w-9 h-9 rounded-lg"></div>
+                    <div className="animate-pulse bg-gray-600 w-9 h-9 rounded-lg"></div>
+                  </div>
+                </div>
+              ))
+            ) : getFilteredAppointments().length > 0 ? (
               getFilteredAppointments().map((item, index) => (
                 <div
                   className="flex items-center px-6 py-4 hover:bg-gray-700 transition-colors duration-200"

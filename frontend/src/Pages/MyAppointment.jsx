@@ -1,12 +1,20 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { AppContext } from "../context/AppContext.jsx";
+import { useSocketContext } from "../context/SocketContext.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { loadStripe } from "@stripe/stripe-js";
+import ChatBox from '../components/ChatBox.jsx';
 
 const MyAppointment = () => {
-  const { token, backendUrl, getDoctors } = useContext(AppContext);
+  const { token, backendUrl, getDoctors, userData } = useContext(AppContext);
+  const { socket } = useSocketContext();
   const [appointments, setAppointments] = useState([]);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatAppointment, setChatAppointment] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
   const months = [
     "Jan",
     "Feb",
@@ -35,6 +43,7 @@ const MyAppointment = () => {
   };
 
   const handlePaynow = async (appointmentId) => {
+    console.log('Stripe Key:', import.meta.env.VITE_STRIPE_KEY_ID);
     const stripe = await loadStripe(import.meta.env.VITE_STRIPE_KEY_ID);
 
     try {
@@ -50,7 +59,6 @@ const MyAppointment = () => {
         toast.error(response.data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error("Payment initiation failed.");
     }
   };
@@ -61,24 +69,33 @@ const MyAppointment = () => {
         headers: { token },
       });
       if (data.success) {
-         console.log(data.data);
         // Sort appointments by date in descending order (most recent first)
         const sortedAppointments = data.data.sort((a, b) => b.date - a.date);
         setAppointments(sortedAppointments);
       } else {
-        console.log(data.message);
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
+    }
+  };
+
+  const getUnreadCounts = async () => {
+    try {
+      const { data } = await axios.get(backendUrl + "/api/user/unread-counts", {
+        headers: { token },
+      });
+      if (data.success) {
+        // console.log('User: Fetched unread counts:', data.unreadCounts);
+        setUnreadCounts(data.unreadCounts);
+      }
+    } catch (error) {
+      // console.error('Error fetching unread counts:', error);
     }
   };
 
   const cancelAppointment = async (appointmentId) => {
     try {
-      // console.log(appointmentId)
-
       const { data } = await axios.post(
         backendUrl + "/api/user/cancel-appointment",
         { appointmentId },
@@ -93,16 +110,123 @@ const MyAppointment = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
+  };
+
+  const handleOpenChat = async (appointment) => {
+    setChatAppointment(appointment);
+    setChatMessages([]);
+    setChatLoading(true);
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/user/appointment/${appointment._id}/chat-messages`, {
+        headers: { token },
+      });
+      if (data.success) {
+        setChatMessages(data.messages || []);
+      } else {
+        setChatMessages([]);
+      }
+    } catch (err) {
+      // console.error('User: Error loading chat messages:', err);
+      setChatMessages([]);
+    }
+    setChatOpen(true);
+    setChatLoading(false);
+  };
+
+  const handleSendMessage = (msg) => {
+    // The socket will handle broadcasting the message and updating the UI
+    // No need to manually add to state here
   };
 
   useEffect(() => {
     if (token) {
       getMyAppointments();
+      getUnreadCounts();
     }
   }, [token]);
+
+  // Join socket rooms for all appointments when appointments are loaded
+  useEffect(() => {
+    if (appointments.length > 0 && socket) {
+      // console.log('User: Joining socket rooms for appointments:', appointments.map(a => a._id));
+      appointments.forEach(appointment => {
+        socket.emit('joinAppointmentRoom', appointment._id);
+      });
+    }
+  }, [appointments, socket]);
+
+  // Handle new messages for unread count updates
+  const handleNewMessage = useCallback((event) => {
+    const { appointmentId, message } = event.detail;
+    const currentUserId = userData?._id || userData?.id;
+    
+    // Check if this is the user's own message (sent within last 5 seconds)
+    const isOwnRecentMessage = message.createdAt && 
+      (new Date() - new Date(message.createdAt)) < 5000 && 
+      message.sender && currentUserId && 
+      message.sender.toString() === currentUserId.toString();
+    
+    // Only increment unread count if message is from the other person
+    // Convert both to strings for reliable comparison
+    if (message.sender && currentUserId && 
+        message.sender.toString() !== currentUserId.toString() && 
+        !isOwnRecentMessage) {
+      // console.log('User: Incrementing unread count for appointment:', appointmentId);
+      setUnreadCounts(prev => {
+        const currentCount = prev[appointmentId] || 0;
+        const updated = {
+          ...prev,
+          [appointmentId]: currentCount + 1
+        };
+        return updated;
+      });
+    }
+  }, [userData?._id, userData?.id, userData]);
+
+  // Note: Socket events are now handled globally by SocketContext.jsx
+  // No need to listen to socket events here as they're already dispatched as custom events
+
+  // Listen for all custom events (consolidated to prevent duplicate listeners)
+  useEffect(() => {
+    // Don't add event listeners if userData is not loaded
+    if (!userData) {
+      return;
+    }
+
+    const handleResetUnreadCount = (event) => {
+      const { appointmentId } = event.detail;
+      setUnreadCounts(prev => ({
+        ...prev,
+        [appointmentId]: 0
+      }));
+    };
+
+    const handleUnreadCountUpdate = (event) => {
+      const { appointmentId, unreadCounts: newUnreadCounts } = event.detail;
+      const currentUserId = userData?._id || userData?.id;
+      
+      if (newUnreadCounts && newUnreadCounts[currentUserId] !== undefined) {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [appointmentId]: newUnreadCounts[currentUserId]
+        }));
+      }
+    };
+
+    // Add all event listeners in one place
+    window.addEventListener('newMessage', handleNewMessage);
+    window.addEventListener('resetUnreadCount', handleResetUnreadCount);
+    window.addEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+    
+    return () => {
+      // Clean up all event listeners
+      window.removeEventListener('newMessage', handleNewMessage);
+      window.removeEventListener('resetUnreadCount', handleResetUnreadCount);
+      window.removeEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+    };
+  }, [handleNewMessage, userData]);
 
   const getStatusBadge = (appointment) => {
     if (appointment.cancelled) {
@@ -134,10 +258,20 @@ const MyAppointment = () => {
 
   return (
     <div>
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Appointments</h1>
-        <p className="text-gray-600 dark:text-gray-300">Manage and track your scheduled appointments</p>
+        {/* Info Notice: Chat visibility */}
+        <div className="mb-6 flex items-center justify-between">
+          <p className="text-gray-600 dark:text-gray-300">Manage and track your scheduled appointments</p>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-lg shadow-sm">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" /></svg>
+              <span className="text-sm">Chat with doctor will be available only after payment is completed for the appointment.</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Appointments List */}
@@ -208,19 +342,39 @@ const MyAppointment = () => {
                     >
                       Pay Now
                     </button>
-                    <button
-                      onClick={() => cancelAppointment(item._id)}
-                      className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
-                    >
-                      Cancel Appointment
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
+                        onClick={() => cancelAppointment(item._id)}
+                      >
+                        Cancel Appointment
+                      </button>
+                    </div>
                   </>
                 )}
                     
                     {item.payment && !item.isCompleted && !item.cancelled && (
-                    <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
-                      Payment Done !
-                    </button>
+                    <>
+                      <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
+                        Payment Done !
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="relative inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl sm:min-w-48"
+                          onClick={() => handleOpenChat(item)}
+                        >
+                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          Chat
+                          {unreadCounts[item._id] > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
+                              {unreadCounts[item._id] > 99 ? '99+' : unreadCounts[item._id]}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    </>
                 )}
                     
                   {item.isCompleted && (
@@ -251,6 +405,17 @@ const MyAppointment = () => {
           </div>
         )}
       </div>
+      <ChatBox
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        appointmentId={chatAppointment?._id}
+        user={userData}
+        doctor={chatAppointment?.docData}
+        messages={chatMessages}
+        onSendMessage={handleSendMessage}
+        loading={chatLoading}
+        socket={socket}
+      />
     </div>
   );
 };

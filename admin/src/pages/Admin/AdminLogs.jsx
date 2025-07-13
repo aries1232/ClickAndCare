@@ -294,6 +294,20 @@ const AdminLogs = () => {
                     <div className="text-sm text-gray-300 max-w-xs truncate">
                       {log.description}
                     </div>
+                    {/* Show login email and type for LOGIN actions */}
+                    {log.action === 'LOGIN' && log.details && (
+                      <div className="mt-1 text-xs text-blue-300">
+                        Login Email: <span className="font-mono">{log.details.loginEmail}</span>
+                        {log.details.loginEmailType && (
+                          <span className="ml-2 px-2 py-0.5 rounded bg-blue-900 text-blue-200">
+                            {log.details.loginEmailType === 'admin_email' ? 'Admin Email' : 'Recovery Email'}
+                          </span>
+                        )}
+                        {log.details.deviceInfo && log.details.browserInfo && (
+                          <span className="ml-2 text-gray-400">({log.details.deviceInfo} / {log.details.browserInfo})</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-400">

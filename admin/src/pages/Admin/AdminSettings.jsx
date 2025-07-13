@@ -10,7 +10,8 @@ const AdminSettings = () => {
   const [newName, setNewName] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [isAddingEmail, setIsAddingEmail] = useState(false);
-  const [isToggling, setIsToggling] = useState(false);
+  const [togglingEmails, setTogglingEmails] = useState({}); // Track individual email toggling states
+  const [removingEmails, setRemovingEmails] = useState({}); // Track individual email removing states
   const [isRemoving, setIsRemoving] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [emailChangePassword, setEmailChangePassword] = useState('');
@@ -112,7 +113,9 @@ const AdminSettings = () => {
   };
 
   const handleToggleRecoveryEmail = async (email) => {
-    setIsToggling(true);
+    // Set loading state for this specific email
+    setTogglingEmails(prev => ({ ...prev, [email]: true }));
+    
     try {
       const { data } = await axios.patch(`${backendUrl}/api/admin/recovery-email/${encodeURIComponent(email)}/toggle`, {}, {
         headers: { aToken }
@@ -120,7 +123,22 @@ const AdminSettings = () => {
       
       if (data.success) {
         toast.success(data.message);
-        loadAdminProfile(); // Reload to get updated list
+        
+        // Update the UI optimistically instead of refreshing the entire page
+        setAdminProfile(prev => {
+          if (!prev) return prev;
+          
+          const updatedRecoveryEmails = prev.recoveryEmails.map(re => 
+            re.email === email.toLowerCase() 
+              ? { ...re, isActive: data.isActive }
+              : re
+          );
+          
+          return {
+            ...prev,
+            recoveryEmails: updatedRecoveryEmails
+          };
+        });
       } else {
         toast.error(data.message);
       }
@@ -128,7 +146,8 @@ const AdminSettings = () => {
       console.error('Error toggling recovery email:', error);
       toast.error(error.response?.data?.message || 'Failed to toggle recovery email');
     } finally {
-      setIsToggling(false);
+      // Clear loading state for this specific email
+      setTogglingEmails(prev => ({ ...prev, [email]: false }));
     }
   };
 
@@ -137,7 +156,9 @@ const AdminSettings = () => {
       return;
     }
 
-    setIsRemoving(true);
+    // Set loading state for this specific email
+    setRemovingEmails(prev => ({ ...prev, [email]: true }));
+    
     try {
       const { data } = await axios.delete(`${backendUrl}/api/admin/recovery-email/${encodeURIComponent(email)}`, {
         headers: { aToken }
@@ -145,7 +166,18 @@ const AdminSettings = () => {
       
       if (data.success) {
         toast.success('Recovery email removed successfully');
-        loadAdminProfile(); // Reload to get updated list
+        
+        // Update the UI optimistically instead of refreshing the entire page
+        setAdminProfile(prev => {
+          if (!prev) return prev;
+          
+          const updatedRecoveryEmails = prev.recoveryEmails.filter(re => re.email !== email.toLowerCase());
+          
+          return {
+            ...prev,
+            recoveryEmails: updatedRecoveryEmails
+          };
+        });
       } else {
         toast.error(data.message);
       }
@@ -153,7 +185,8 @@ const AdminSettings = () => {
       console.error('Error removing recovery email:', error);
       toast.error(error.response?.data?.message || 'Failed to remove recovery email');
     } finally {
-      setIsRemoving(false);
+      // Clear loading state for this specific email
+      setRemovingEmails(prev => ({ ...prev, [email]: false }));
     }
   };
 
@@ -350,22 +383,42 @@ const AdminSettings = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleToggleRecoveryEmail(recoveryEmail.email)}
-                        disabled={isToggling}
-                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-200 ${
+                        disabled={togglingEmails[recoveryEmail.email]}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-200 flex items-center gap-1 ${
                           recoveryEmail.isActive
                             ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
                             : 'bg-green-600 hover:bg-green-700 text-white'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
-                        {isToggling ? '...' : recoveryEmail.isActive ? 'Deactivate' : 'Activate'}
+                        {togglingEmails[recoveryEmail.email] ? (
+                          <>
+                            <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                          </>
+                        ) : (
+                          recoveryEmail.isActive ? 'Deactivate' : 'Activate'
+                        )}
                       </button>
                       
                       <button
                         onClick={() => handleRemoveRecoveryEmail(recoveryEmail.email)}
-                        disabled={isRemoving}
-                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md text-xs font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={removingEmails[recoveryEmail.email]}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md text-xs font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                       >
-                        {isRemoving ? '...' : 'Remove'}
+                        {removingEmails[recoveryEmail.email] ? (
+                          <>
+                            <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Removing...
+                          </>
+                        ) : (
+                          'Remove'
+                        )}
                       </button>
                     </div>
                   </div>

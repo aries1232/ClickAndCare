@@ -101,10 +101,10 @@ const addDoctor = async (req, res) => {
     }
 };
 
-//api for the getting all doctors (for admin panel - only with profile pictures)
+//api for the getting all doctors (for admin panel - all doctors including those without profile pictures)
 const allDoctors = async(req,res) => {
         try {
-            const doctors = await doctorModel.find({ image: { $ne: null } }).select('-password');
+            const doctors = await doctorModel.find({}).select('-password');
             res.json({success : true,doctors});
             
         } catch (error) {
@@ -141,8 +141,12 @@ const loginAdmin = async (req, res) => {
         // If not found by admin email, try to find by recovery email
         if (!admin) {
             admin = await Admin.findOne({ 
-                'recoveryEmails.email': email.toLowerCase(),
-                'recoveryEmails.isActive': true,
+                recoveryEmails: {
+                    $elemMatch: {
+                        email: email.toLowerCase(),
+                        isActive: true
+                    }
+                },
                 isActive: true 
             });
         }
@@ -159,13 +163,143 @@ const loginAdmin = async (req, res) => {
         const token = jwt.sign({ adminId: admin._id, email: admin.email }, process.env.JWT_SECRET, { expiresIn: '24h' });
         await Admin.findByIdAndUpdate(admin._id, { lastLogin: new Date() });
         
+        // Get device and location information
+        const userAgent = req.headers['user-agent'] || 'Unknown';
+        const ipAddress = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'Unknown';
+        const loginTime = new Date().toLocaleString();
+        
+        // Extract device information from user agent
+        let deviceInfo = 'Unknown Device';
+        let browserInfo = 'Unknown Browser';
+        
+        if (userAgent.includes('Mobile')) {
+            deviceInfo = 'Mobile Device';
+        } else if (userAgent.includes('Tablet')) {
+            deviceInfo = 'Tablet';
+        } else if (userAgent.includes('Windows')) {
+            deviceInfo = 'Windows Computer';
+        } else if (userAgent.includes('Mac')) {
+            deviceInfo = 'Mac Computer';
+        } else if (userAgent.includes('Linux')) {
+            deviceInfo = 'Linux Computer';
+        }
+        
+        if (userAgent.includes('Chrome')) {
+            browserInfo = 'Chrome';
+        } else if (userAgent.includes('Firefox')) {
+            browserInfo = 'Firefox';
+        } else if (userAgent.includes('Safari')) {
+            browserInfo = 'Safari';
+        } else if (userAgent.includes('Edge')) {
+            browserInfo = 'Edge';
+        }
+        
         // Log which email was used for login
         const loginEmailType = email.toLowerCase() === admin.email.toLowerCase() ? 'admin_email' : 'recovery_email';
         await logAdminAction('LOGIN', LOG_MESSAGES.LOGIN, admin._id, admin.email, { 
             loginEmail: email, 
             loginEmailType,
-            adminEmail: admin.email 
+            adminEmail: admin.email,
+            deviceInfo,
+            browserInfo,
+            ipAddress
         }, req);
+        
+        // Send email notifications to all recovery emails and admin email
+        try {
+            const subject = 'Admin Login Alert - ClickAndCare';
+            const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                    <div style="background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <div style="background-color: #007bff; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <h1 style="color: #333; margin: 0; font-size: 24px; font-weight: 600;">Admin Login Alert</h1>
+                            <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">New login detected for ClickAndCare admin account</p>
+                        </div>
+                        
+                        <div style="color: #555; line-height: 1.6;">
+                            <div style="background-color: #e3f2fd; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0; border-radius: 0 5px 5px 0;">
+                                <p style="margin: 0; font-weight: 600; color: #333;">Login Details:</p>
+                                <p style="margin: 5px 0 0 0; color: #666;">A new login has been detected for the ClickAndCare admin account.</p>
+                            </div>
+                            
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; font-weight: 600; color: #333;">Login Time:</p>
+                                <p style="margin: 5px 0 0 0; color: #666;">${loginTime}</p>
+                            </div>
+                            
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; font-weight: 600; color: #333;">Login Email Used:</p>
+                                <p style="margin: 5px 0 0 0; color: #666;">${email}</p>
+                                <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">
+                                    ${email.toLowerCase() === admin.email.toLowerCase() ? 'Admin Email' : 'Recovery Email'}
+                                </p>
+                            </div>
+                            
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; font-weight: 600; color: #333;">Device Information:</p>
+                                <p style="margin: 5px 0 0 0; color: #666;">${deviceInfo} - ${browserInfo}</p>
+                            </div>
+                            
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; font-weight: 600; color: #333;">IP Address:</p>
+                                <p style="margin: 5px 0 0 0; color: #666;">${ipAddress}</p>
+                            </div>
+                            
+                            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; color: #856404; font-weight: 600;">
+                                    ⚠️ Security Notice: If this login was not authorized by you, please contact the system administrator immediately and change your password.
+                                </p>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <p style="margin: 0; font-size: 14px; color: #999; text-align: center;">
+                                    This is an automated security notification from ClickAndCare system.<br>
+                                    For security reasons, we notify all authorized contacts of admin login activities.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Send to admin email
+            await sendEmail({
+                to: admin.email,
+                subject: subject,
+                html: html
+            });
+            
+            // Send to all active recovery emails
+            const activeRecoveryEmails = admin.recoveryEmails.filter(email => email.isActive);
+            const emailPromises = activeRecoveryEmails.map(async (recoveryEmail) => {
+                try {
+                    await sendEmail({
+                        to: recoveryEmail.email,
+                        subject: subject,
+                        html: html
+                    });
+                    return { success: true, email: recoveryEmail.email };
+                } catch (error) {
+                    console.error(`Failed to send login alert to ${recoveryEmail.email}:`, error);
+                    return { success: false, email: recoveryEmail.email, error: error.message };
+                }
+            });
+            
+            const results = await Promise.all(emailPromises);
+            const successfulEmails = results.filter(r => r.success).map(r => r.email);
+            const failedEmails = results.filter(r => !r.success).map(r => r.email);
+            
+            console.log(`Login alert sent to admin email and ${successfulEmails.length} recovery emails. Failed: ${failedEmails.length}`);
+            
+        } catch (emailError) {
+            console.error('Failed to send login alert emails:', emailError);
+            // Don't fail the login if email fails
+        }
         
         res.json({ 
             success: true, 
@@ -447,8 +581,12 @@ const adminForgotPassword = async (req, res) => {
         // If not found by admin email, try to find by recovery email
         if (!admin) {
             admin = await Admin.findOne({ 
-                'recoveryEmails.email': email.toLowerCase(),
-                'recoveryEmails.isActive': true,
+                recoveryEmails: {
+                    $elemMatch: {
+                        email: email.toLowerCase(),
+                        isActive: true
+                    }
+                },
                 isActive: true 
             });
         }
@@ -638,28 +776,121 @@ const toggleRecoveryEmail = async (req, res) => {
     try {
         const { email } = req.params;
         
+        console.log('Toggle recovery email request:', { email, adminId: req.adminId });
+        
         const admin = await Admin.findById(req.adminId);
         if (!admin) {
             return res.json({ success: false, message: "Admin not found" });
         }
         
+        console.log('Admin found:', { adminEmail: admin.email, recoveryEmails: admin.recoveryEmails });
+        
+        // Decode the email parameter and convert to lowercase
+        const decodedEmail = decodeURIComponent(email).toLowerCase();
+        console.log('Looking for email:', decodedEmail);
+        
         // Find the email
-        const recoveryEmail = admin.recoveryEmails.find(re => re.email === email.toLowerCase());
+        const recoveryEmail = admin.recoveryEmails.find(re => re.email === decodedEmail);
         if (!recoveryEmail) {
+            console.log('Recovery email not found. Available emails:', admin.recoveryEmails.map(re => re.email));
             return res.json({ success: false, message: "Recovery email not found" });
         }
         
+        console.log('Recovery email found:', { email: recoveryEmail.email, currentStatus: recoveryEmail.isActive });
+        
         // Toggle status
+        const wasActive = recoveryEmail.isActive;
         recoveryEmail.isActive = !recoveryEmail.isActive;
         await admin.save();
+        
+        console.log('Status toggled to:', recoveryEmail.isActive);
+        
+        // Send email notification
+        try {
+            const action = recoveryEmail.isActive ? 'activated' : 'deactivated';
+            const subject = `Recovery Email ${action.charAt(0).toUpperCase() + action.slice(1)} - ClickAndCare`;
+            const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+                    <div style="background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <div style="background-color: #17de71; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <h1 style="color: #333; margin: 0; font-size: 24px; font-weight: 600;">Recovery Email ${action.charAt(0).toUpperCase() + action.slice(1)}</h1>
+                        </div>
+                        
+                        <div style="color: #555; line-height: 1.6;">
+                            <p style="font-size: 16px; margin-bottom: 20px;">Hello <strong>${recoveryEmail.name}</strong>,</p>
+                            
+                            <p style="font-size: 16px; margin-bottom: 20px;">
+                                Your recovery email has been <strong style="color: ${recoveryEmail.isActive ? '#17de71' : '#ff6b6b'}; font-weight: 600;">${action}</strong> for the ClickAndCare system.
+                            </p>
+                            
+                            <div style="background-color: #f8f9fa; border-left: 4px solid ${recoveryEmail.isActive ? '#17de71' : '#ff6b6b'}; padding: 15px; margin: 20px 0; border-radius: 0 5px 5px 0;">
+                                <p style="margin: 0; font-weight: 600; color: #333;">Recovery Email:</p>
+                                <p style="margin: 5px 0 0 0; color: #666;">${recoveryEmail.email}</p>
+                            </div>
+                            
+                            <div style="background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0; border-radius: 0 5px 5px 0;">
+                                <p style="margin: 0; font-weight: 600; color: #333;">Current Status:</p>
+                                <p style="margin: 5px 0 0 0; color: #666;">
+                                    <span style="color: ${recoveryEmail.isActive ? '#17de71' : '#ff6b6b'}; font-weight: 600;">
+                                        ${recoveryEmail.isActive ? '✓ Active' : '✗ Inactive'}
+                                    </span>
+                                </p>
+                            </div>
+                            
+                            ${recoveryEmail.isActive ? 
+                                `<div style="background-color: #e8f5e8; border: 1px solid #17de71; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                    <p style="margin: 0; color: #17de71; font-weight: 600;">
+                                        ✓ You will now receive OTP codes for password reset requests
+                                    </p>
+                                </div>` : 
+                                `<div style="background-color: #ffe8e8; border: 1px solid #ff6b6b; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                    <p style="margin: 0; color: #ff6b6b; font-weight: 600;">
+                                        ✗ You will no longer receive OTP codes for password reset requests
+                                    </p>
+                                </div>`
+                            }
+                            
+                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0; font-size: 14px; color: #666;">
+                                    <strong>Action Time:</strong> ${new Date().toLocaleString()}
+                                </p>
+                            </div>
+                            
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <p style="margin: 0; font-size: 14px; color: #999; text-align: center;">
+                                    This is an automated security notification from ClickAndCare system.<br>
+                                    If you didn't expect this change, please contact the system administrator immediately.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            await sendEmail({
+                to: recoveryEmail.email,
+                subject: subject,
+                html: html
+            });
+            
+            console.log(`Email notification sent to ${recoveryEmail.email} for ${action} action`);
+        } catch (emailError) {
+            console.error(`Failed to send email notification to ${recoveryEmail.email}:`, emailError);
+            // Don't fail the entire operation if email fails
+        }
         
         // Log the action
         await logAdminAction(
             'TOGGLE_RECOVERY_EMAIL',
-            `${recoveryEmail.isActive ? 'Activated' : 'Deactivated'} recovery email: ${email}`,
+            `${recoveryEmail.isActive ? 'Activated' : 'Deactivated'} recovery email: ${decodedEmail}`,
             admin._id,
             admin.email,
-            { email, isActive: recoveryEmail.isActive },
+            { email: decodedEmail, isActive: recoveryEmail.isActive, wasActive },
             req
         );
         
@@ -670,7 +901,7 @@ const toggleRecoveryEmail = async (req, res) => {
         });
         
     } catch (error) {
-        console.log(error);
+        console.log('Error in toggleRecoveryEmail:', error);
         res.json({ success: false, message: error.message });
     }
 };
@@ -727,4 +958,143 @@ const changeAdminEmail = async (req, res) => {
     }
 };
 
-export { addDoctor, loginAdmin , allDoctors, appointmentsAdmin , appointmentCancel , adminDashboard, approveDoctor, getPendingDoctors, approveExistingDoctors, deleteDoctor, getAdminLogs, adminForgotPassword, adminResetPassword, getAdminProfile, addRecoveryEmail, removeRecoveryEmail, toggleRecoveryEmail, changeAdminEmail }; 
+// Admin function to update doctor information
+const updateDoctorInfo = async (req, res) => {
+    try {
+        const { doctorId, name, speciality, degree, experience, about, fees, address } = req.body;
+        const adminId = req.adminId;
+
+        if (!doctorId) {
+            return res.json({ success: false, message: "Doctor ID is required" });
+        }
+
+        // Check if doctor exists
+        const doctor = await doctorModel.findById(doctorId);
+        if (!doctor) {
+            return res.json({ success: false, message: "Doctor not found" });
+        }
+
+        // Prepare update data
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (speciality) updateData.speciality = speciality;
+        if (degree) updateData.degree = degree;
+        if (experience) updateData.experience = experience;
+        if (about) updateData.about = about;
+        if (fees) updateData.fees = fees;
+        if (address) {
+            // Parse address if it's a string
+            try {
+                updateData.address = typeof address === 'string' ? JSON.parse(address) : address;
+            } catch (error) {
+                return res.json({ success: false, message: "Invalid address format" });
+            }
+        }
+
+        // Update doctor
+        await doctorModel.findByIdAndUpdate(doctorId, updateData);
+
+        // Log the action
+        await logAdminAction(
+            'UPDATE_DOCTOR',
+            `Updated doctor information: ${doctor.name}`,
+            adminId,
+            doctor.email,
+            { doctorId, updatedFields: Object.keys(updateData) },
+            req
+        );
+
+        res.json({ success: true, message: "Doctor information updated successfully" });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Admin function to update doctor profile picture
+const updateDoctorProfilePicture = async (req, res) => {
+    try {
+        const { doctorId } = req.body;
+        const imageFile = req.file;
+        const adminId = req.adminId;
+
+        if (!doctorId) {
+            return res.json({ success: false, message: "Doctor ID is required" });
+        }
+
+        if (!imageFile) {
+            return res.json({ success: false, message: "No image provided" });
+        }
+
+        // Check if doctor exists
+        const doctor = await doctorModel.findById(doctorId);
+        if (!doctor) {
+            return res.json({ success: false, message: "Doctor not found" });
+        }
+
+        // Upload image to cloudinary
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" });
+        const imageURL = imageUpload.secure_url;
+
+        // Update doctor's profile picture
+        await doctorModel.findByIdAndUpdate(doctorId, { image: imageURL });
+
+        // Log the action
+        await logAdminAction(
+            'UPDATE_DOCTOR_PICTURE',
+            `Updated profile picture for doctor: ${doctor.name}`,
+            adminId,
+            doctor.email,
+            { doctorId, imageURL },
+            req
+        );
+
+        res.json({ success: true, message: "Profile picture updated successfully", image: imageURL });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Admin function to toggle doctor visibility on user website
+const toggleDoctorVisibility = async (req, res) => {
+    try {
+        const { doctorId } = req.body;
+        const adminId = req.adminId;
+
+        if (!doctorId) {
+            return res.json({ success: false, message: "Doctor ID is required" });
+        }
+
+        // Check if doctor exists
+        const doctor = await doctorModel.findById(doctorId);
+        if (!doctor) {
+            return res.json({ success: false, message: "Doctor not found" });
+        }
+
+        // Toggle visibility
+        const newVisibility = !doctor.visible;
+        await doctorModel.findByIdAndUpdate(doctorId, { visible: newVisibility });
+
+        // Log the action
+        await logAdminAction(
+            'TOGGLE_DOCTOR_VISIBILITY',
+            `${newVisibility ? 'Made visible' : 'Hidden'} doctor: ${doctor.name}`,
+            adminId,
+            doctor.email,
+            { doctorId, visible: newVisibility },
+            req
+        );
+
+        res.json({ 
+            success: true, 
+            message: `Doctor ${newVisibility ? 'made visible' : 'hidden'} successfully`,
+            visible: newVisibility
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+export { addDoctor, loginAdmin , allDoctors, appointmentsAdmin , appointmentCancel , adminDashboard, approveDoctor, getPendingDoctors, approveExistingDoctors, deleteDoctor, getAdminLogs, adminForgotPassword, adminResetPassword, getAdminProfile, addRecoveryEmail, removeRecoveryEmail, toggleRecoveryEmail, changeAdminEmail, updateDoctorInfo, updateDoctorProfilePicture, toggleDoctorVisibility }; 

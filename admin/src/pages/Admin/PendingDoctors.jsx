@@ -3,13 +3,16 @@ import { AdminContext } from "../../context/AdminContext";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { assets } from "../../assets/assets";
+import EditDoctorModal from "../../components/EditDoctorModal";
 
 const PendingDoctors = () => {
   const [pendingDoctors, setPendingDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { backendUrl, aToken, deleteDoctor } = useContext(AdminContext);
+  const [editingDoctor, setEditingDoctor] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { backendUrl, aToken, deleteDoctor, toggleDoctorVisibility } = useContext(AdminContext);
 
   useEffect(() => {
     fetchPendingDoctors();
@@ -71,6 +74,18 @@ const PendingDoctors = () => {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const handleEditDoctor = (doctor) => {
+    setEditingDoctor(doctor);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingDoctor(null);
+    setIsEditModalOpen(false);
+    // Refresh the pending doctors list after editing
+    fetchPendingDoctors();
   };
 
   // Filter doctors based on search
@@ -212,81 +227,95 @@ const PendingDoctors = () => {
           {filteredDoctors.map((doctor) => (
             <div
               key={doctor._id}
-              className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden hover:border-gray-600 transition-all duration-300 hover:shadow-lg"
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border border-gray-700 overflow-hidden hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 group"
             >
               {/* Doctor Image */}
-              <div className="relative h-48 bg-gray-100">
+              <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                 <img
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       src={doctor.image || assets.upload_area} 
                       alt={doctor.name} 
                 />
                 <div className="absolute top-3 right-3">
-                  <span className="bg-yellow-900 text-yellow-200 text-xs px-2 py-1 rounded-full">Pending</span>
+                  <span className="bg-gradient-to-r from-yellow-600 to-yellow-700 text-yellow-100 text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg">Pending</span>
                 </div>
                 <div className="absolute bottom-3 left-3">
-                  <div className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+                  <div className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-sm font-medium border border-white/20">
                     {getSpecialityIcon(doctor.speciality)} {doctor.speciality || 'Speciality'}
                   </div>
                 </div>
-                    {!doctor.image && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                {!doctor.image && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm">
                     <div className="text-center">
-                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                      </svg>
+                      <div className="bg-gray-700/50 p-4 rounded-full mb-3">
+                        <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                        </svg>
+                      </div>
                       <p className="text-white text-sm font-medium">No Profile Picture</p>
                     </div>
-                      </div>
-                    )}
                   </div>
+                )}
+              </div>
 
               {/* Doctor Info */}
               <div className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-1">
+                    <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-300 transition-colors">
                       {doctor.name || 'Name not available'}
                     </h3>
-                    <p className="text-sm text-gray-400">{doctor.email || 'Email not available'}</p>
+                    <p className="text-sm text-gray-400 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                      </svg>
+                      {doctor.email || 'Email not available'}
+                    </p>
                   </div>
                   <div className="text-right ml-4">
                     <p className="text-lg font-bold text-green-400">₹{doctor.fees || 'Not set'}</p>
-                    <p className="text-xs text-gray-500">Consultation</p>
+                    <p className="text-xs text-gray-500 font-medium">Consultation</p>
                   </div>
                 </div>
 
                 {/* Doctor Details */}
-                <div className="space-y-2 mb-4">
+                <div className="space-y-2 mb-3">
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm text-gray-300">{doctor.experience || 'Experience'} years exp.</span>
+                    <div className="bg-blue-500/20 p-1 rounded">
+                      <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="text-xs text-gray-300">{doctor.experience || 'Experience'} years exp.</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838l-2.727 1.17 1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                    </svg>
-                    <span className="text-sm text-gray-300">{doctor.degree || 'Degree not available'}</span>
+                    <div className="bg-purple-500/20 p-1 rounded">
+                      <svg className="w-3 h-3 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838l-2.727 1.17 1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs text-gray-300">{doctor.degree || 'Degree not available'}</span>
                   </div>
                 </div>
 
                 {/* About Section */}
                 {doctor.about && (
-                  <div className="mb-4 p-3 bg-gray-700 rounded-lg">
-                    <p className="text-sm text-gray-300 line-clamp-2">{doctor.about}</p>
+                  <div className="mb-3 p-2 bg-gray-700/30 rounded-lg">
+                    <p className="text-xs text-gray-300 line-clamp-2">{doctor.about}</p>
                   </div>
                 )}
 
                 {/* Address */}
                 {doctor.address && (
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <div className="flex items-start gap-2">
-                      <svg className="w-4 h-4 text-gray-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      <p className="text-sm text-gray-400">
+                      <div className="bg-orange-500/20 p-1 rounded mt-0.5">
+                        <svg className="w-3 h-3 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <p className="text-xs text-gray-300 leading-relaxed">
                         {typeof doctor.address === 'string' 
                           ? doctor.address 
                           : doctor.address.address || 'Address not available'}
@@ -295,35 +324,45 @@ const PendingDoctors = () => {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-3 border-t border-gray-700">
+                                {/* Action Buttons */}
+                <div className="flex gap-2 pt-3 border-t border-gray-700/50">
                     <button
                       onClick={() => handleApproval(doctor._id, true)}
                       disabled={!doctor.image}
-                    className={`flex-1 px-4 py-2 rounded-md font-medium transition ${
+                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 ${
                         doctor.image 
-                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        ? 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-green-500/25' 
                         : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                       }`}
                       title={!doctor.image ? "Cannot approve without profile picture" : "Approve doctor"}
                     >
-                    <svg className="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                       Approve
                     </button>
                     <button
                       onClick={() => handleApproval(doctor._id, false)}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                    className="flex-1 px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-md hover:from-red-700 hover:to-red-800 transition-all duration-200 font-medium shadow-lg hover:shadow-red-500/25"
                     >
-                    <svg className="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                       Reject
                     </button>
+ 
+                    <button
+                      onClick={() => handleEditDoctor(doctor)}
+                      className="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-blue-500/25"
+                      title="Edit doctor information"
+                    >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    </button>
                     <button
                       onClick={() => handleDeleteDoctor(doctor)}
-                      className="px-3 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 transition"
+                      className="px-3 py-2 bg-gradient-to-r from-red-800 to-red-900 text-white rounded-md hover:from-red-900 hover:to-red-950 transition-all duration-200 font-medium shadow-lg hover:shadow-red-500/25"
                       title="Delete doctor permanently"
                     >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,8 +373,8 @@ const PendingDoctors = () => {
 
                 {/* Missing Info Warning */}
                 {!doctor.image && (
-                  <div className="mt-3 p-2 bg-red-900/20 border border-red-700 rounded-lg">
-                    <p className="text-red-400 text-xs font-medium">
+                  <div className="mt-3 p-2 bg-red-900/20 border border-red-700/50 rounded-lg">
+                    <p className="text-red-300 text-xs font-medium">
                       ⚠️ Profile picture required for approval
                     </p>
                   </div>
@@ -345,6 +384,13 @@ const PendingDoctors = () => {
             ))}
           </div>
         )}
+
+      {/* Edit Doctor Modal */}
+      <EditDoctorModal
+        doctor={editingDoctor}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+      />
     </div>
   );
 };

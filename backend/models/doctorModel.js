@@ -11,6 +11,7 @@ const doctorSchema = new mongoose.Schema({
     about: {type:String, required:true},
     available: {type:Boolean, default:true},
     approved: {type:Boolean, default:false},
+    visible: {type:Boolean, default:true}, // Whether doctor is visible on user website
     fees: {type:Number, required:true},
     address: {type:Object, required:true},
     date: {type:Number, required:true},

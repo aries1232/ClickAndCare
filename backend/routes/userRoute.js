@@ -1,5 +1,23 @@
 import express from 'express'
-import { registerUser, loginUser, verifyOTP, resendOTP, getProfile, updateProfile, bookAppointment, allAppointments, cancelAppointment, makePayment, updatePaymentStatus, forgotPassword, resetPassword, googleLogin } from '../controllers/userController.js'
+import { 
+  registerUser, 
+  loginUser, 
+  verifyOTP, 
+  resendOTP, 
+  getProfile, 
+  updateProfile, 
+  bookAppointment, 
+  allAppointments, 
+  cancelAppointment, 
+  makePayment, 
+  updatePaymentStatus, 
+  forgotPassword, 
+  resetPassword, 
+  getAppointmentChatMessages, 
+  getUnreadCounts, 
+  resetAllUnreadCounts, 
+  googleLogin 
+} from '../controllers/userController.js'
 import authUser from '../middlewares/authUser.js'
 import upload from '../middlewares/multer.js'
 // import MyProfile from '../../frontend/src/Pages/MyProfile.jsx'
@@ -20,6 +38,9 @@ userRouter.post('/book-appointment', authUser, bookAppointment)
 userRouter.get('/appointments', authUser, allAppointments)
 userRouter.post('/cancel-appointment', authUser, cancelAppointment)
 userRouter.post('/make-payment', authUser, makePayment)
-userRouter.post('/update-payment-status', updatePaymentStatus)
+userRouter.post('/update-payment-status', authUser, updatePaymentStatus)
+userRouter.get('/appointment/:appointmentId/chat-messages', authUser, getAppointmentChatMessages)
+userRouter.get('/unread-counts', authUser, getUnreadCounts)
+userRouter.post('/reset-unread-counts', authUser, resetAllUnreadCounts)
 
 export default userRouter

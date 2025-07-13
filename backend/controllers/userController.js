@@ -14,6 +14,8 @@ import {
   sendAppointmentConfirmation,
   sendPasswordResetOTP,
 } from "../utils/emailService.js";
+import Conversation from '../models/Conversation.js';
+import Message from '../models/Message.js';
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -238,7 +240,7 @@ const loginUser = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.user.id;
     const userData = await userModel.findById(userId).select("-password");
     res.json({ success: true, userData });
   } catch (error) {
@@ -251,10 +253,11 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { userId, name, phone, address, dob, gender } = req.body;
+    const userId = req.user.id;
+    const { name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
     
-    if (!userId || !name || !phone) {
+    if (!name || !phone) {
       return res.json({ success: false, message: "Required fields missing" });
     }
 
@@ -293,7 +296,8 @@ const updateProfile = async (req, res) => {
 //Api to book appointment
 const bookAppointment = async (req, res) => {
   try {
-    const { userId, docId, slotDate, slotTime } = req.body;
+    const userId = req.user.id;
+    const { docId, slotDate, slotTime } = req.body;
 
     // Check if user is verified
     const user = await userModel.findById(userId);
@@ -353,7 +357,7 @@ const bookAppointment = async (req, res) => {
 //api to get appointments for the user
 const allAppointments = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.user.id;
     const data = await appointmentModel.find({ userId }).sort({ date: -1 });
     //console.log(data);
     res.json({ success: true, data });
@@ -367,7 +371,8 @@ const allAppointments = async (req, res) => {
 
 const cancelAppointment = async (req, res) => {
   try {
-    const { userId, appointmentId } = req.body;
+    const userId = req.user.id;
+    const { appointmentId } = req.body;
     const appointmentData = await appointmentModel.findById(appointmentId);
 
     if (appointmentData.userId !== userId) {
@@ -398,22 +403,27 @@ const cancelAppointment = async (req, res) => {
 };
 
 // api to make payment
-
 const makePayment = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { appointmentId } = req.body;
 
-    if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid appointmentId format" });
+    const appointment = await appointmentModel.findById(appointmentId);
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
     }
 
-    const appointmentData = await appointmentModel.findById(appointmentId);
-    if (!appointmentData) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Appointment not found" });
+    if (appointment.userId !== userId) {
+      return res.json({ success: false, message: "Unauthorized action" });
+    }
+
+    if (appointment.payment) {
+      return res.json({ success: false, message: "Payment already completed" });
+    }
+
+    if (!process.env.STRIPE_SECRET) {
+      console.error('STRIPE_SECRET is not set in environment variables');
+      return res.json({ success: false, message: "Payment service configuration error" });
     }
 
     const stripe = new Stripe(process.env.STRIPE_SECRET);
@@ -425,23 +435,25 @@ const makePayment = async (req, res) => {
           price_data: {
             currency: "inr",
             product_data: {
-              name: `Appointment with ${appointmentData.docData.name}`,
+              name: "Appointment Booking",
             },
-            unit_amount: appointmentData.amount * 100,
+            unit_amount: appointment.amount * 100,
           },
           quantity: 1,
         },
       ],
       mode: "payment",
-
-      success_url: `${process.env.FRONTEND_URL}/success/${appointmentId}`,
+      success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/cancel`,
+      metadata: {
+        appointmentId: appointmentId,
+      },
     });
 
     res.json({ success: true, sessionId: session.id });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -566,6 +578,117 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Fetch chat messages for an appointment
+const getAppointmentChatMessages = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    if (!appointmentId) return res.status(400).json({ success: false, message: 'Missing appointmentId' });
+    
+    const conversation = await Conversation.findOne({ appointmentId })
+      .populate({
+        path: 'messages',
+        options: { sort: { createdAt: 1 } },
+      });
+    
+    if (!conversation) return res.status(404).json({ success: false, message: 'No chat found for this appointment' });
+    
+    // Transform messages to match ChatBox expected format
+    const transformedMessages = conversation.messages.map(msg => ({
+      _id: msg._id,
+      sender: msg.senderId,
+      message: msg.message,
+      messageType: msg.messageType,
+      fileUrl: msg.fileUrl,
+      fileName: msg.fileName,
+      fileSize: msg.fileSize,
+      status: msg.status,
+      deliveredAt: msg.deliveredAt,
+      readAt: msg.readAt,
+      time: new Date(msg.createdAt).toLocaleTimeString(),
+      createdAt: msg.createdAt
+    }));
+    
+    res.json({ success: true, messages: transformedMessages });
+  } catch (err) {
+    console.error('User API: Error in getAppointmentChatMessages:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Get unread counts for user's appointments
+const getUnreadCounts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all appointments for the user
+    const appointments = await appointmentModel.find({ userId });
+
+    const unreadCounts = {};
+
+    for (const appointment of appointments) {
+      const conversation = await Conversation.findOne({ appointmentId: appointment._id });
+      if (conversation) {
+        // Get messages where user is the receiver and sender is not the user
+        const actualUnreadMessages = await Message.find({
+          _id: { $in: conversation.messages },
+          receiverId: userId,
+          senderId: { $ne: userId }, // Ensure sender is not the user
+          status: { $ne: 'read' }
+        });
+        
+        const actualUnreadCount = actualUnreadMessages.length;
+        const storedUnreadCount = conversation.unreadCount.get(userId.toString()) || 0;
+        
+        // If there's a mismatch, update the stored count
+        if (actualUnreadCount !== storedUnreadCount) {
+          conversation.unreadCount.set(userId.toString(), actualUnreadCount);
+          await conversation.save();
+        }
+        
+        unreadCounts[appointment._id.toString()] = actualUnreadCount;
+      } else {
+        unreadCounts[appointment._id.toString()] = 0;
+      }
+    }
+
+    res.json({ success: true, unreadCounts });
+  } catch (error) {
+    console.error('Error getting unread counts:', error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Reset all unread counts for a user (debug/cleanup endpoint)
+const resetAllUnreadCounts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('User API: Resetting all unread counts for user:', userId);
+
+    // Get all appointments for the user
+    const appointments = await appointmentModel.find({ userId });
+    console.log('User API: Found appointments:', appointments.length);
+
+    let resetCount = 0;
+
+    for (const appointment of appointments) {
+      const conversation = await Conversation.findOne({ appointmentId: appointment._id });
+      if (conversation) {
+        // Reset unread count to 0
+        conversation.unreadCount.set(userId.toString(), 0);
+        await conversation.save();
+        resetCount++;
+        console.log('User API: Reset unread count for appointment:', appointment._id);
+      }
+    }
+
+    console.log('User API: Reset unread counts for', resetCount, 'conversations');
+    res.json({ success: true, message: `Reset unread counts for ${resetCount} conversations` });
+  } catch (error) {
+    console.error('Error resetting unread counts:', error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 // API to handle Google OAuth login
 const googleLogin = async (req, res) => {
   try {
@@ -630,5 +753,8 @@ export {
   updatePaymentStatus,
   forgotPassword,
   resetPassword,
+  getAppointmentChatMessages,
+  getUnreadCounts,
+  resetAllUnreadCounts,
   googleLogin,
 };

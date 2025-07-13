@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { AdminContext } from '../context/AdminContext';
 import { NavLink } from 'react-router-dom';
 import { assets } from '../assets/assets';
@@ -6,7 +6,16 @@ import { DoctorContext } from '../context/DoctorContext';
 
 const Sidebar = () => {
     const { aToken } = useContext(AdminContext);
-    const {dToken} = useContext(DoctorContext);
+    const { dToken, totalUnreadCount, getUnreadCounts } = useContext(DoctorContext);
+
+    // Fetch unread counts immediately when sidebar mounts (for doctors)
+    useEffect(() => {
+        if (dToken) {
+            getUnreadCounts();
+        }
+    }, [dToken, getUnreadCounts]);
+
+
 
     return (
         <div className="h-screen bg-gray-800/50 backdrop-blur-sm border-r border-gray-700 p-2 flex flex-col flex-none overflow-hidden 
@@ -92,7 +101,14 @@ const Sidebar = () => {
                             ${isActive ? 'bg-green-600 text-white shadow-lg' : 'text-gray-200 hover:bg-gray-700/50'}`
                         }
                     >
-                        <img src={assets.appointment_icon} alt="Appointments" className="w-6 h-6 flex-shrink-0" />
+                        <div className="relative">
+                            <img src={assets.appointment_icon} alt="Appointments" className="w-6 h-6 flex-shrink-0" />
+                            {totalUnreadCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
+                                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                </span>
+                            )}
+                        </div>
                         <p className="truncate hidden sm:block">Appointments</p>
                     </NavLink>
 

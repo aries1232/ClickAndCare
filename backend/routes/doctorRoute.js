@@ -1,5 +1,5 @@
 import express from 'express'; 
-import { appointmentsDoctor, getDoctors, loginDoctor, appointmentCancel,appointmentComplete, doctorDashboard,doctorProfile,updateDoctorProfile, signupDoctor, updateProfilePicture, sendSignupOTP, verifySignupOTP} from '../controllers/doctorController.js';
+import { appointmentsDoctor, getDoctors, loginDoctor, appointmentCancel,appointmentComplete, doctorDashboard,doctorProfile,updateDoctorProfile, signupDoctor, updateProfilePicture, sendSignupOTP, verifySignupOTP, getAppointmentChatMessages, getUnreadCounts} from '../controllers/doctorController.js';
 import authDoctor from '../middlewares/authDoctor.js';
 import upload from '../middlewares/multer.js';
 
@@ -19,5 +19,7 @@ doctorRouter.get('/dashboard', authDoctor,doctorDashboard)
 doctorRouter.get('/profile', authDoctor,doctorProfile)
 doctorRouter.post('/update-profile', authDoctor,updateDoctorProfile)
 doctorRouter.post('/update-profile-picture', authDoctor, upload.single('image'), updateProfilePicture)
+doctorRouter.get('/appointment/:appointmentId/chat-messages', authDoctor, getAppointmentChatMessages)
+doctorRouter.get('/unread-counts', authDoctor, getUnreadCounts)
 
 export default doctorRouter;

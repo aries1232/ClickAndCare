@@ -1,8 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets.js";
 import DefaultAvatar from '../../components/DefaultAvatar';
+import ChatBox from '../../components/ChatBox.jsx';
+import axios from "axios";
 
 const DoctorAppointments = () => {
   const {
@@ -11,19 +13,40 @@ const DoctorAppointments = () => {
     getAppointments,
     completeAppointment,
     cancelAppointment,
+    profileData,
+    backendUrl,
+    unreadCounts,
+    getUnreadCounts,
+    incrementUnreadCount,
+    resetUnreadCount,
+    updateUnreadCount,
   } = useContext(DoctorContext);
 
-  const { calculateAge, slotDateFormat } = useContext(AppContext);
+  const { calculateAge, slotDateFormat, socket } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const currency = "₹";
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatAppointment, setChatAppointment] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     if (dToken) {
       getAppointments();
+      getUnreadCounts();
     }
   }, [dToken]);
+
+  // Join socket rooms for all appointments when appointments are loaded
+  useEffect(() => {
+    if (appointments.length > 0 && socket) {
+      appointments.forEach(appointment => {
+        socket.emit('joinAppointmentRoom', appointment._id);
+      });
+    }
+  }, [appointments, socket]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -64,8 +87,39 @@ const DoctorAppointments = () => {
       }
     });
 
+  const handleOpenChat = async (appointment) => {
+    setChatAppointment(appointment);
+    setChatMessages([]);
+    setChatLoading(true);
+    try {
+      const url = `${backendUrl}/api/doctor/appointment/${appointment._id}/chat-messages`;
+      const { data } = await axios.get(url, {
+        headers: { dToken },
+      });
+      if (data.success) {
+        setChatMessages(data.messages || []);
+      } else {
+        setChatMessages([]);
+      }
+    } catch (err) {
+      console.error('Doctor: Error loading chat messages:', err);
+      setChatMessages([]);
+    }
+    setChatOpen(true);
+    setChatLoading(false);
+  };
+
+  const handleSendMessage = (msg) => {
+    // The socket will handle broadcasting the message and updating the UI
+    // No need to manually add to state here
+  };
+
+  // Note: Socket events are now handled globally by DoctorContext
+  // No need to listen to socket events here as they're already handled in the context
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
@@ -310,6 +364,22 @@ const DoctorAppointments = () => {
                           </svg>
                           Cancel
                         </button>
+                        {item.payment && !item.isCompleted && !item.cancelled && (
+                          <button
+                            className="relative inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                            onClick={() => handleOpenChat(item)}
+                          >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Chat
+                            {unreadCounts[item._id] > 0 && (
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
+                                {unreadCounts[item._id] > 99 ? '99+' : unreadCounts[item._id]}
+                              </span>
+                            )}
+                          </button>
+                        )}
               </div>
             )}
                   </td>
@@ -329,6 +399,18 @@ const DoctorAppointments = () => {
           </div>
         )}
       </div>
+
+      <ChatBox
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        appointmentId={chatAppointment?._id}
+        user={profileData}
+        doctor={chatAppointment?.userData}
+        messages={chatMessages}
+        onSendMessage={handleSendMessage}
+        loading={chatLoading}
+        isDoctor={true}
+      />
     </div>
   );
 };

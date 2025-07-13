@@ -127,28 +127,13 @@ const DoctorSignup = () => {
         const {data} = await axios.post(backendUrl + '/api/doctor/signup' ,formData);
 
         if(data.success) {
-          toast.success(data.message);
-          console.log('doctor registered');
-          setDocImg(false)
-          setName('')
-          setPassword('')
-          setEmail('')
-          setDegree('')
-          setAbout('')
-          setFees('')
-          setAddress('')
-          setEmailVerified(false)
-          setOtpSent(false)
-          setOtp('')
-          navigate('/doctor-login');
+          toast.success("Doctor registered successfully!");
+          navigate("/doctor/login");
         } else {
           toast.error(data.message);
         }
-        
-        
       } catch (error) {
-        toast.error(error.message)
-        console.log(error);
+        toast.error(error.response?.data?.message || "Registration failed");
       } finally {
         setLoading(false);
       }

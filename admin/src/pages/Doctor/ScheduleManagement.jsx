@@ -45,13 +45,19 @@ const ScheduleManagement = () => {
 
   const handleSaveSchedule = async () => {
     try {
-      // Here you would typically save to backend
-      console.log('Saving schedule:', schedule);
-      setIsEditing(false);
-      // Add toast notification for success
+      setSaving(true);
+      const { data } = await axios.post(
+        backendUrl + "/api/doctor/schedule",
+        { schedule },
+        { headers: { dToken } }
+      );
+      if (data.success) {
+        toast.success("Schedule saved successfully!");
+      }
     } catch (error) {
-      console.error('Error saving schedule:', error);
-      // Add toast notification for error
+      toast.error(error.response?.data?.message || "Failed to save schedule");
+    } finally {
+      setSaving(false);
     }
   };
 

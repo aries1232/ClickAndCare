@@ -63,8 +63,7 @@ const AddDoctor = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-      console.log(error);
+      toast.error(error.response?.data?.message || "Failed to add doctor");
     } finally {
       setLoading(false);
     }

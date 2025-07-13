@@ -17,7 +17,17 @@ const adminLogSchema = new mongoose.Schema({
       'VIEW_DASHBOARD',
       'VIEW_DOCTORS',
       'VIEW_APPOINTMENTS',
-      'VIEW_PENDING_DOCTORS'
+      'VIEW_PENDING_DOCTORS',
+      // Added actions:
+      'UPDATE_DOCTOR',
+      'UPDATE_DOCTOR_PICTURE',
+      'TOGGLE_DOCTOR_VISIBILITY',
+      'REMOVE_RECOVERY_EMAIL',
+      'TOGGLE_RECOVERY_EMAIL',
+      'FORGOT_PASSWORD',
+      'RESET_PASSWORD',
+      'ADD_RECOVERY_EMAIL',
+      'CHANGE_ADMIN_EMAIL'
     ]
   },
   description: {

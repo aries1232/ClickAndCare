@@ -24,6 +24,7 @@ const DoctorLogin = () => {
 
         try {
             const { data } = await axios.post(backendUrl + '/api/doctor/login', { email, password });
+            
             if (data.success) {
                 localStorage.setItem('dToken', data.token);
                 setDToken(data.token);
@@ -33,7 +34,6 @@ const DoctorLogin = () => {
                 toast.error(data.message);
             }
         } catch (error) {
-            console.error("Login Failed !", error);
             toast.error('Login failed. Please check your credentials.');
         } finally {
             setLoading(false);

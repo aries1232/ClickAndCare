@@ -171,21 +171,21 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <img src={logo} alt="Click&Care" className="w-32 h-16 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Create Account</h1>
-          <p className="text-gray-600">Join Click&Care to book appointments with top doctors</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Create Account</h1>
+          <p className="text-gray-600 dark:text-gray-300">Join Click&Care to book appointments with top doctors</p>
         </div>
 
         {/* Registration Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Input */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Full Name
               </label>
               <input 
@@ -196,13 +196,13 @@ const Register = () => {
                 value={formData.name} 
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white dark:bg-gray-900 dark:text-white"
               />
             </div>
 
             {/* Email Input with Verify Button */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Email Address
               </label>
               <div className="flex gap-2">
@@ -215,8 +215,8 @@ const Register = () => {
                 onChange={handleChange}
                 required
                   disabled={emailVerified}
-                  className={`flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white ${
-                    emailVerified ? 'bg-green-50 border-green-300' : ''
+                  className={`flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white dark:bg-gray-900 dark:text-white ${
+                    emailVerified ? 'bg-green-50 dark:bg-green-900 border-green-300 dark:border-green-700' : ''
                   }`}
                 />
                 <button

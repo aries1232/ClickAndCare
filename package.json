@@ -4,6 +4,8 @@
   "description": "ClickAndCare - Healthcare Management System",
   "scripts": {
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ../admin && npm install",
+    "build": "npm run install:all && npm run build:all",
+    "start": "cd backend && npm start",
     "build:frontend": "cd frontend && npm run build",
     "build:admin": "cd admin && npm run build",
     "build:all": "npm run build:frontend && npm run build:admin",
@@ -13,7 +15,8 @@
     "run:all": "start cmd /k \"npm run start:backend\" && start cmd /k \"npm run dev:frontend\" && start cmd /k \"npm run dev:admin\"",
     "lint:frontend": "cd frontend && npm run lint",
     "lint:admin": "cd admin && npm run lint",
-    "lint:all": "npm run lint:frontend && npm run lint:admin"
+    "lint:all": "npm run lint:frontend && npm run lint:admin",
+    "dev-all": "concurrently \"cd frontend && npm run dev\" \"cd admin && npm run dev\" \"cd backend && npm start\""
   },
   "keywords": ["healthcare", "appointment", "doctor", "patient"],
   "author": "",

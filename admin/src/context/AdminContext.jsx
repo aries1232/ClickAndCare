@@ -49,7 +49,6 @@ const AdminContextProvider = (props) => {
           }
           
         } catch (error) {
-          console.log(error);
           toast.error(error.message);
           
         } finally {
@@ -113,13 +112,11 @@ const AdminContextProvider = (props) => {
             const {data} = await axios.get(backendUrl + '/api/admin/appointments',{headers:{aToken}});
             if(data.success){
                 setAppointments(data.appointments);
-                //console.log(data.appointments);
             }else {
                 toast.error(data.message);
             }
         } catch (error) {
-            console.log(error.message);
-            toast.error(error.message || 'Failed to fetch appointments');
+            toast.error(error.response?.data?.message || "Failed to fetch appointments");
         }
     }
 
@@ -147,7 +144,7 @@ const AdminContextProvider = (props) => {
             getAllAppointments();
           }
         } catch (error) {
-          toast.error(error.message);
+          toast.error(error.response?.data?.message || "Failed to cancel appointment");
           // Revert optimistic update on error
           getAllAppointments();
         }
@@ -180,7 +177,72 @@ const AdminContextProvider = (props) => {
             toast.error(data.message);
           }
         } catch (error) {
-          toast.error(error.message);
+          toast.error(error.response?.data?.message || "Failed to delete doctor");
+        }
+    }
+
+    // api call to update doctor information
+    const updateDoctorInfo = async(doctorId, updateData) => {
+        try {
+            const {data} = await axios.put(backendUrl + '/api/admin/update-doctor-info', 
+                { doctorId, ...updateData }, 
+                {headers:{aToken}}
+            );
+            if(data.success){
+                toast.success(data.message);
+                getAllDoctors(); // Refresh doctor list
+                getdashboardData(); // Update dashboard stats
+            }else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update doctor info");
+        }
+    }
+
+    // api call to update doctor profile picture
+    const updateDoctorProfilePicture = async(doctorId, imageFile) => {
+        try {
+            const formData = new FormData();
+            formData.append('doctorId', doctorId);
+            formData.append('image', imageFile);
+
+            const {data} = await axios.put(backendUrl + '/api/admin/update-doctor-picture', 
+                formData, 
+                {
+                    headers:{
+                        aToken,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+            if(data.success){
+                toast.success(data.message);
+                getAllDoctors(); // Refresh doctor list
+            }else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update doctor picture");
+        }
+    }
+
+    // api call to toggle doctor visibility on user website
+    const toggleDoctorVisibility = async(doctorId) => {
+        try {
+            const {data} = await axios.post(backendUrl + '/api/admin/toggle-doctor-visibility', 
+                { doctorId }, 
+                {headers:{aToken}}
+            );
+            if(data.success){
+                toast.success(data.message);
+                getAllDoctors(); // Refresh doctor list
+                getdashboardData(); // Update dashboard stats
+            }else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to toggle doctor visibility");
         }
     }
 
@@ -263,6 +325,9 @@ const AdminContextProvider = (props) => {
         cancelAppointment,
         cancelAppointmentSilent,
         deleteDoctor,
+        updateDoctorInfo,
+        updateDoctorProfilePicture,
+        toggleDoctorVisibility,
         startAutoRefresh,
         stopAutoRefresh,
         isLoading,
