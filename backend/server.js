@@ -55,7 +55,9 @@ const corsOptions = {
       'http://localhost:5179',
       'http://localhost:5180',
       'https://clickandcare-frontend.onrender.com',
-      'https://clickandcare-admin.onrender.com'
+      'https://clickandcare-admin.onrender.com',
+      'https://clickandcare.netlify.app',
+      'https://clickandcare.netlify.app/'
     ];
     
     // In development, allow any localhost origin
