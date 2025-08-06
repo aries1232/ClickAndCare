@@ -4,7 +4,7 @@ import { useSocketContext } from "../context/SocketContext.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { loadStripe } from "@stripe/stripe-js";
-import ChatBox from '../components/ChatBox.jsx';
+import ChatBox from '../Components/ChatBox.jsx';
 
 const MyAppointment = () => {
   const { token, backendUrl, getDoctors, userData } = useContext(AppContext);
