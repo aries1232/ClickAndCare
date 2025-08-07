@@ -61,6 +61,7 @@ const App = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/success" element={<Success />} />
             <Route path="/cancel" element={<Cancel />} />
+            <Route path="/payment-cancelled" element={<Cancel />} />
             <Route path="/test-cancel" element={<Cancel />} />
             <Route path="/cancel-payment" element={<CancelPayment />} />
             <Route path="/cancel-new" element={<CancelPayment />} />
