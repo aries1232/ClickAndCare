@@ -60,6 +60,7 @@ const App = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/success" element={<Success />} />
             <Route path="/cancel" element={<Cancel />} />
+            <Route path="/test-cancel" element={<Cancel />} />
           </Routes>
         </div>
 

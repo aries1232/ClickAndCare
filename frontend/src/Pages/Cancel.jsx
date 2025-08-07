@@ -1,6 +1,7 @@
 import React from "react";
 
 const Cancel = () => {
+  console.log("Cancel component rendered");
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md text-center">
