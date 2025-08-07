@@ -1,20 +1,19 @@
 import React, { useContext, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContext } from "../context/AppContext.jsx";
 
 const Success = () => {
   const { backendUrl } = useContext(AppContext);
-  const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-  const navigate = useNavigate();  
+  const { appointmentId } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const updatePaymentStatus = async () => {
       try {
         const response = await axios.post(`${backendUrl}/api/user/update-payment-status`, {
-          sessionId,
+          appointmentId,
         });
 
         if (response.data.success) {
@@ -32,15 +31,15 @@ const Success = () => {
       }
     };
 
-    if (sessionId) {
+    if (appointmentId) {
       updatePaymentStatus();
     } else {
        
-      console.warn("Session ID is missing.");
-      toast.warn("Session ID is missing.");
+      console.warn("Appointment ID is missing.");
+      toast.warn("Appointment ID is missing.");
       navigate("/");  
     }
-  }, [sessionId, backendUrl, navigate]);  
+  }, [appointmentId, backendUrl, navigate]);  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">

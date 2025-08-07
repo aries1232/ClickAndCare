@@ -17,7 +17,6 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Success from "./Pages/Success.jsx";
 import Cancel from "./Pages/Cancel.jsx";
-import CancelPayment from "./Pages/CancelPayment.jsx";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { DarkModeProvider } from "./context/DarkModeContext";
 
@@ -59,13 +58,8 @@ const App = () => {
             <Route path="/verify-otp" element={<OTPVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/success" element={<Success />} />
+            <Route path="/success/:appointmentId" element={<Success />} />
             <Route path="/cancel" element={<Cancel />} />
-            <Route path="/payment-cancelled" element={<Cancel />} />
-            <Route path="/cancel-payment" element={<Cancel />} />
-            <Route path="/test-cancel" element={<Cancel />} />
-            <Route path="/payment-failed" element={<Cancel />} />
-            <Route path="/cancel-new" element={<CancelPayment />} />
           </Routes>
         </div>
 
