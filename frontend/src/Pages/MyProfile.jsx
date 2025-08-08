@@ -4,7 +4,7 @@ import { assets } from "../assets/assets";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import DefaultAvatar from "../components/DefaultAvatar.jsx";
+import DefaultAvatar from "../Components/DefaultAvatar.jsx";
 
 const MyProfile = () => {
   const {userData, setUserData, token, setToken, backendUrl, loadUserProfileData} = useContext(AppContext)

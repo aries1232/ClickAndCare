@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {AppContext }from '../context/AppContext'
 import { useSocketContext } from '../context/SocketContext'
 import { toast } from "react-toastify";
-import DefaultAvatar from "../components/DefaultAvatar.jsx";
+import DefaultAvatar from "../Components/DefaultAvatar.jsx";
 import DarkModeToggle from "./DarkModeToggle.jsx";
 import axios from "axios";
 

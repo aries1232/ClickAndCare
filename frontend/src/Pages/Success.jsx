@@ -7,7 +7,7 @@ import { AppContext } from "../context/AppContext.jsx";
 const Success = () => {
   const { backendUrl } = useContext(AppContext);
   const { appointmentId } = useParams();
-  const navigate = useNavigate();  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const updatePaymentStatus = async () => {

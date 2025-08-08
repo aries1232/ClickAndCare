@@ -1,0 +1,3 @@
+[33m10b3b33[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mlowsize[m[33m, [m[1;31morigin/lowsize[m[33m)[m Fix success page routing to handle query parameters from Stripe
+[33m8483284[m Add Netlify domain to CORS allowed origins
+[33m559029f[m Fix all import paths for Components directory case sensitivity

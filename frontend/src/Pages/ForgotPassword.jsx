@@ -86,15 +86,15 @@ const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <img src={logo} alt="Click&Care" className="w-32 h-16 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
             {otpSent ? 'Reset Password' : 'Forgot Password'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             {otpSent 
               ? 'Enter the OTP sent to your email and create a new password'
               : 'Enter your email address to receive a password reset OTP'
@@ -103,12 +103,12 @@ const ForgotPassword = () => {
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
           {!otpSent ? (
             // Step 1: Enter Email
             <form onSubmit={sendOTP} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
@@ -119,10 +119,10 @@ const ForgotPassword = () => {
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                     </svg>
                   </div>
@@ -151,7 +151,7 @@ const ForgotPassword = () => {
             // Step 2: Enter OTP and New Password
             <form onSubmit={resetPassword} className="space-y-6">
               <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="otp" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   OTP Code
                 </label>
                 <input 
@@ -162,12 +162,12 @@ const ForgotPassword = () => {
                   onChange={(e) => setOtp(e.target.value)} 
                   maxLength="6"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white text-center text-lg tracking-widest"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-center text-lg tracking-widest"
                 />
               </div>
 
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   New Password
                 </label>
                 <div className="relative">
@@ -178,12 +178,12 @@ const ForgotPassword = () => {
                     value={newPassword} 
                     onChange={(e) => setNewPassword(e.target.value)} 
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none pr-12 bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none pr-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                   <button 
                     type="button" 
                     onClick={() => setShowPassword((prev) => !prev)} 
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
                     {showPassword ? (
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,7 +200,7 @@ const ForgotPassword = () => {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Confirm New Password
                 </label>
                 <div className="relative">
@@ -211,12 +211,12 @@ const ForgotPassword = () => {
                     value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)} 
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none pr-12 bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none pr-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                   <button 
                     type="button" 
                     onClick={() => setShowConfirmPassword((prev) => !prev)} 
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
                     {showConfirmPassword ? (
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +256,7 @@ const ForgotPassword = () => {
           <div className="mt-6 text-center">
             <button
               onClick={() => navigate('/login')}
-              className="text-primary hover:text-green-600 transition-colors font-medium"
+              className="text-primary hover:text-green-600 dark:text-green-400 dark:hover:text-green-300 transition-colors font-medium"
             >
               ← Back to Login
             </button>
