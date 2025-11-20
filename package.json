@@ -3,23 +3,25 @@
   "version": "1.0.0",
   "description": "ClickAndCare - Healthcare Management System",
   "main": "backend/server.js",
-  "scripts": {
-    "postinstall": "npm run install:all",
-    "install:all": "cd frontend && npm install && cd ../backend && npm install && cd ../admin && npm install",
-    "build": "npm run install:all && npm run build:all",
-    "start": "cd backend && npm start",
-    "build:frontend": "cd frontend && node -e \"require('fs').copyFileSync('env.production', '.env.production')\" && npm run build",
-    "build:admin": "cd admin && node -e \"require('fs').copyFileSync('env.production', '.env.production')\" && npm run build",
-    "build:all": "npm run build:frontend && npm run build:admin",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:admin": "cd admin && npm run dev",
-    "start:backend": "cd backend && npm start",
-    "run:all": "start cmd /k \"npm run start:backend\" && start cmd /k \"npm run dev:frontend\" && start cmd /k \"npm run dev:admin\"",
-    "lint:frontend": "cd frontend && npm run lint",
-    "lint:admin": "cd admin && npm run lint",
-    "lint:all": "npm run lint:frontend && npm run lint:admin",
-    "dev-all": "concurrently \"cd frontend && npm run dev\" \"cd admin && npm run dev\" \"cd backend && npm start\""
-  },
+   "scripts": {
+  "build": "npm run build:all",
+  "start": "cd backend && npm start",
+  "build:frontend": "cd frontend && node -e \"require('fs').copyFileSync('env.production', '.env.production')\" && npm run build",
+  "build:admin": "cd admin && node -e \"require('fs').copyFileSync('env.production', '.env.production')\" && npm run build",
+  "build:all": "npm run build:frontend && npm run build:admin",
+
+  "dev:frontend": "cd frontend && npm run dev",
+  "dev:admin": "cd admin && npm run dev",
+  "start:backend": "cd backend && npm start",
+
+  "run:all": "start cmd /k \"npm run start:backend\" && start cmd /k \"npm run dev:frontend\" && start cmd /k \"npm run dev:admin\"",
+
+  "lint:frontend": "cd frontend && npm run lint",
+  "lint:admin": "cd admin && npm run lint",
+  "lint:all": "npm run lint:frontend && npm run lint:admin",
+
+  "dev-all": "concurrently \"cd frontend && npm run dev\" \"cd admin && npm run dev\" \"cd backend && npm start\""
+},
   "keywords": ["healthcare", "appointment", "doctor", "patient"],
   "author": "",
   "license": "ISC",
