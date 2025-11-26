@@ -161,18 +161,18 @@ const MyAppointment = () => {
   const handleNewMessage = useCallback((event) => {
     const { appointmentId, message } = event.detail;
     const currentUserId = userData?._id || userData?.id;
-    
+
     // Check if this is the user's own message (sent within last 5 seconds)
-    const isOwnRecentMessage = message.createdAt && 
-      (new Date() - new Date(message.createdAt)) < 5000 && 
-      message.sender && currentUserId && 
+    const isOwnRecentMessage = message.createdAt &&
+      (new Date() - new Date(message.createdAt)) < 5000 &&
+      message.sender && currentUserId &&
       message.sender.toString() === currentUserId.toString();
-    
+
     // Only increment unread count if message is from the other person
     // Convert both to strings for reliable comparison
-    if (message.sender && currentUserId && 
-        message.sender.toString() !== currentUserId.toString() && 
-        !isOwnRecentMessage) {
+    if (message.sender && currentUserId &&
+      message.sender.toString() !== currentUserId.toString() &&
+      !isOwnRecentMessage) {
       // console.log('User: Incrementing unread count for appointment:', appointmentId);
       setUnreadCounts(prev => {
         const currentCount = prev[appointmentId] || 0;
@@ -206,7 +206,7 @@ const MyAppointment = () => {
     const handleUnreadCountUpdate = (event) => {
       const { appointmentId, unreadCounts: newUnreadCounts } = event.detail;
       const currentUserId = userData?._id || userData?.id;
-      
+
       if (newUnreadCounts && newUnreadCounts[currentUserId] !== undefined) {
         setUnreadCounts(prev => ({
           ...prev,
@@ -219,7 +219,7 @@ const MyAppointment = () => {
     window.addEventListener('newMessage', handleNewMessage);
     window.addEventListener('resetUnreadCount', handleResetUnreadCount);
     window.addEventListener('unreadCountUpdate', handleUnreadCountUpdate);
-    
+
     return () => {
       // Clean up all event listeners
       window.removeEventListener('newMessage', handleNewMessage);
@@ -278,8 +278,8 @@ const MyAppointment = () => {
       <div className="space-y-4">
         {appointments.length > 0 ? (
           appointments.map((item, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
             >
               <div className="p-6">
@@ -287,23 +287,23 @@ const MyAppointment = () => {
                   {/* Doctor Image */}
                   <div className="flex-shrink-0">
                     <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-                      <img 
-                        className="w-full h-full object-cover" 
-                        src={item.docData.image} 
+                      <img
+                        className="w-full h-full object-cover"
+                        src={item.docData.image}
                         alt={item.docData.name}
                         onError={(e) => {
                           e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNzBDMTE2LjU2OSA3MCAxMzAgODMuNDMxIDMwIDEwMEMxMzAgMTE2LjU2OSAxMTYuNTY5IDEzMCAxMDAgMTMwQzgzLjQzMSAxMzAgNzAgMTE2LjU2OSA3MCAxMEM3MCA4My40MzEgODMuNDMxIDcwIDEwMCA3MFoiIGZpbGw9IiNEMzQ1NEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgMTMwQzExNi41NjkgMTMwIDEzMCAxNDMuNDMxIDEzMCAxNjBDMTMwIDE3Ni41NjkgMTE2LjU2OSAxOTAgMTAwIDE5MEM4My40MzEgMTkwIDcwIDE3Ni41NjkgNzAgMTYwQzcwIDE0My40MzEgODMuNDMxIDEzMCAxMDAgMTMwWiIgZmlsbD0iI0QzNDU0RjYiLz4KPC9zdmc+';
                         }}
                       />
                     </div>
-              </div>
+                  </div>
 
                   {/* Appointment Details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
-                  {item.docData.name}
+                          {item.docData.name}
                         </h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-2">{item.docData.speciality}</p>
                       </div>
@@ -315,8 +315,8 @@ const MyAppointment = () => {
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Date & Time</p>
                         <p className="font-medium text-gray-900 dark:text-white">
                           {slotDateFormat(item.slotDate)} | {item.slotTime}
-                  </p>
-                </div>
+                        </p>
+                      </div>
 
                       <div>
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Consultation Fee</p>
@@ -327,67 +327,76 @@ const MyAppointment = () => {
                         <p className="text-gray-500 dark:text-gray-400 mb-1">Address</p>
                         <p className="font-medium text-gray-900 dark:text-white">
                           {item.docData.address?.address || 'Address not available'}
-                </p>
-              </div>
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
                   <div className="flex-shrink-0 flex flex-col gap-2">
                     {!item.payment && !item.cancelled && !item.isCompleted && (
-                  <>
-                    <button
-                      onClick={() => handlePaynow(item._id)}
-                      className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300"
-                    >
-                      Pay Now
-                    </button>
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
-                        onClick={() => cancelAppointment(item._id)}
-                      >
-                        Cancel Appointment
-                      </button>
-                    </div>
-                  </>
-                )}
-                    
-                    {item.payment && !item.isCompleted && !item.cancelled && (
-                    <>
-                      <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
-                        Payment Done !
-                      </button>
-                      <div className="flex items-center gap-2">
+                      <>
                         <button
-                          className="relative inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl sm:min-w-48"
-                          onClick={() => handleOpenChat(item)}
+                          onClick={() => handlePaynow(item._id)}
+                          className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300"
                         >
-                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          Chat
-                          {unreadCounts[item._id] > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
-                              {unreadCounts[item._id] > 99 ? '99+' : unreadCounts[item._id]}
-                            </span>
-                          )}
+                          Pay Now
                         </button>
-                      </div>
-                    </>
-                )}
-                    
-                  {item.isCompleted && (
-                  <button className="sm:min-w-48 py-2 border border-gray-400 rounded text-gray-500">
-                    Appointment Completed
-                  </button>
-                )}
-                    
+
+                        <AppointmentTimer
+                          appointmentDate={item.date}
+                          onExpire={() => {
+                            // Refresh appointments when timer expires to remove the item
+                            getMyAppointments();
+                          }}
+                        />
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
+                            onClick={() => cancelAppointment(item._id)}
+                          >
+                            Cancel Appointment
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {item.payment && !item.isCompleted && !item.cancelled && (
+                      <>
+                        <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
+                          Payment Done !
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="relative inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl sm:min-w-48"
+                            onClick={() => handleOpenChat(item)}
+                          >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Chat
+                            {unreadCounts[item._id] > 0 && (
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
+                                {unreadCounts[item._id] > 99 ? '99+' : unreadCounts[item._id]}
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {item.isCompleted && (
+                      <button className="sm:min-w-48 py-2 border border-gray-400 rounded text-gray-500">
+                        Appointment Completed
+                      </button>
+                    )}
+
                     {item.cancelled && (
-                  <button className="sm:min-w-48 py-2 border border-red-500 rounded text-red-500">
-                    Appointment Cancelled
-                  </button>
-                )}
+                      <button className="sm:min-w-48 py-2 border border-red-500 rounded text-red-500">
+                        Appointment Cancelled
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -416,6 +425,57 @@ const MyAppointment = () => {
         loading={chatLoading}
         socket={socket}
       />
+    </div>
+  );
+};
+
+// Helper component for the timer
+const AppointmentTimer = ({ appointmentDate, onExpire }) => {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const createdTime = new Date(appointmentDate).getTime();
+      const expireTime = createdTime + 2 * 60 * 1000; // 2 minutes
+      const now = new Date().getTime();
+      const difference = expireTime - now;
+
+      if (difference <= 0) {
+        onExpire();
+        return 0;
+      }
+      return difference;
+    };
+
+    // Initial calculation
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      const remaining = calculateTimeLeft();
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [appointmentDate, onExpire]);
+
+  if (timeLeft === null) return null;
+  if (timeLeft <= 0) return <span className="text-red-500 font-bold">Expired</span>;
+
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+  return (
+    <div className="mt-2">
+      <p className="text-red-500 text-sm font-medium animate-pulse">
+        Complete payment in: {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
+      </p>
+      <p className="text-xs text-red-400 mt-1">
+        Appointment will be cancelled automatically if not paid.
+      </p>
     </div>
   );
 };

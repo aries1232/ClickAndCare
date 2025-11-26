@@ -20,7 +20,7 @@ import {
 } from '../controllers/userController.js'
 import authUser from '../middlewares/authUser.js'
 import upload from '../middlewares/multer.js'
-// import MyProfile from '../../frontend/src/Pages/MyProfile.jsx'
+
 
 
 const userRouter = express.Router()

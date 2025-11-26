@@ -19,7 +19,6 @@ import upload from './middlewares/multer.js';
 
 
 
-// Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -57,8 +56,10 @@ const corsOptions = {
       'https://clickandcare-frontend.onrender.com',
       'https://clickandcare-admin.onrender.com',
       'https://clickandcare.netlify.app',
-      'https://clickandcare.netlify.app/'
+      'https://clickandcare.netlify.app/',
+      'https://chikitsalaya.live/'
     ];
+    
     
     // In development, allow any localhost origin
     if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {

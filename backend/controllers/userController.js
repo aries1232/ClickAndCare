@@ -256,7 +256,7 @@ const updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
-    
+
     if (!name || !phone) {
       return res.json({ success: false, message: "Required fields missing" });
     }
@@ -278,7 +278,7 @@ const updateProfile = async (req, res) => {
     }
 
     await userModel.findByIdAndUpdate(userId, updateData);
-    
+
     if (imageFile) {
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
         resource_type: "image",
@@ -358,6 +358,15 @@ const bookAppointment = async (req, res) => {
 const allAppointments = async (req, res) => {
   try {
     const userId = req.user.id;
+
+    // Delete pending appointments older than 2 minutes
+    const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
+    await appointmentModel.deleteMany({
+      userId,
+      payment: false,
+      date: { $lt: twoMinutesAgo }
+    });
+
     const data = await appointmentModel.find({ userId }).sort({ date: -1 });
     //console.log(data);
     res.json({ success: true, data });
@@ -583,15 +592,15 @@ const getAppointmentChatMessages = async (req, res) => {
   try {
     const { appointmentId } = req.params;
     if (!appointmentId) return res.status(400).json({ success: false, message: 'Missing appointmentId' });
-    
+
     const conversation = await Conversation.findOne({ appointmentId })
       .populate({
         path: 'messages',
         options: { sort: { createdAt: 1 } },
       });
-    
+
     if (!conversation) return res.status(404).json({ success: false, message: 'No chat found for this appointment' });
-    
+
     // Transform messages to match ChatBox expected format
     const transformedMessages = conversation.messages.map(msg => ({
       _id: msg._id,
@@ -607,7 +616,7 @@ const getAppointmentChatMessages = async (req, res) => {
       time: new Date(msg.createdAt).toLocaleTimeString(),
       createdAt: msg.createdAt
     }));
-    
+
     res.json({ success: true, messages: transformedMessages });
   } catch (err) {
     console.error('User API: Error in getAppointmentChatMessages:', err);
@@ -635,16 +644,16 @@ const getUnreadCounts = async (req, res) => {
           senderId: { $ne: userId }, // Ensure sender is not the user
           status: { $ne: 'read' }
         });
-        
+
         const actualUnreadCount = actualUnreadMessages.length;
         const storedUnreadCount = conversation.unreadCount.get(userId.toString()) || 0;
-        
+
         // If there's a mismatch, update the stored count
         if (actualUnreadCount !== storedUnreadCount) {
           conversation.unreadCount.set(userId.toString(), actualUnreadCount);
           await conversation.save();
         }
-        
+
         unreadCounts[appointment._id.toString()] = actualUnreadCount;
       } else {
         unreadCounts[appointment._id.toString()] = 0;
@@ -693,7 +702,7 @@ const resetAllUnreadCounts = async (req, res) => {
 const googleLogin = async (req, res) => {
   try {
     const { googleId, name, email, imageUrl } = req.body;
-    
+
     if (!googleId || !email) {
       return res.json({ success: false, message: "Missing required Google account details" });
     }
@@ -707,9 +716,9 @@ const googleLogin = async (req, res) => {
         // Update the user with Google ID and mark as verified
         user = await userModel.findOneAndUpdate(
           { email },
-          { 
-            googleId, 
-            authProvider: 'google', 
+          {
+            googleId,
+            authProvider: 'google',
             isVerified: true,
             image: user.image || imageUrl || ''
           },

@@ -90,7 +90,14 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <img src={logo} alt="Click&Care" className="w-32 h-16 mx-auto mb-4" />
+        <a href="https://clickandcare.netlify.app">
+  <img 
+    src={logo} 
+    alt="Click&Care" 
+    className="w-40 h-22 mx-auto mb-4" 
+  />
+</a>
+
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
             {otpSent ? 'Reset Password' : 'Forgot Password'}
           </h1>

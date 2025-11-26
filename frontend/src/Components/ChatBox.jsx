@@ -177,13 +177,11 @@ const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, onSen
     return () => container.removeEventListener('scroll', handleScroll);
   }, [liveMessages, isOpen, isAutoScrolling]); // Re-run when messages change or chat opens
 
-  // Auto-scroll to bottom only when opening chat
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
       setIsAutoScrolling(true);
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        // Reset auto-scroll flag after animation completes
         setTimeout(() => {
           setIsAutoScrolling(false);
         }, 500);
@@ -315,7 +313,7 @@ const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, onSen
         socket.emit('sendMessage', { appointmentId, message: msgObj });
         setInput('');
         
-        // Auto-scroll to bottom when sending an image
+        // Auto-scroll to bottom when sending an image 
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }, 100);
