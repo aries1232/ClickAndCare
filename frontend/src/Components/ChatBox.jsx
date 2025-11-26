@@ -4,7 +4,7 @@ import { useSocketContext } from '../context/SocketContext.jsx';
 import { FaImage } from 'react-icons/fa';
 import axios from 'axios';
 
-const SOCKET_URL = import.meta.env.MODE === 'production' ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
+const SOCKET_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
 
 function formatDate(dateStr) {
   const date = new Date(dateStr);

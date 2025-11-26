@@ -16,7 +16,7 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     if (userData && userData._id) {
       if (socket && socket.connected) return;
-      const socketUrl = import.meta.env.MODE === 'production' ? '/' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
+      const socketUrl = import.meta.env.PROD ? '/' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
       const newSocket = io(socketUrl, {
         query: { userId: userData._id },
         transports: ['websocket', 'polling'],
