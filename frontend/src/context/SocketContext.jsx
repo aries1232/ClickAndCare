@@ -18,8 +18,9 @@ export const SocketContextProvider = ({ children }) => {
       if (socket && socket.connected) return;
       const socketUrl = import.meta.env.PROD ? '/' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
       const newSocket = io(socketUrl, {
+        path: '/socket.io/',
         query: { userId: userData._id },
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
