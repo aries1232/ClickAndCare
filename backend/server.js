@@ -56,7 +56,8 @@ const corsOptions = {
       'https://clickandcare-frontend.onrender.com',
       'https://clickandcare-admin.onrender.com',
       'https://clickandcare.netlify.app',
-      'https://clickandcare.netlify.app/'
+      'https://clickandcare.netlify.app/',
+      'https://chikitsalaya.live'
     ];
     
     
