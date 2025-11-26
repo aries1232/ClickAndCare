@@ -21,6 +21,18 @@
     Content-Type = "application/javascript; charset=utf-8"
 
 [[redirects]]
+  from = "/api/*"
+  to = "http://16.171.149.124:3000/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/socket.io/*"
+  to = "http://16.171.149.124:3000/socket.io/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
