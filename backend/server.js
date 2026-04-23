@@ -9,6 +9,8 @@ import { v2 as cloudinary } from "cloudinary";
 import adminRouter from "./routes/adminRoute.js";
 import userRouter from "./routes/userRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
+import webhookRouter from "./routes/webhookRoute.js";
+import { startPaymentRecoveryJob } from "./utils/paymentRecoveryJob.js";
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import Conversation from './models/Conversation.js';
@@ -34,6 +36,10 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_SECRET_KEY,
 });
+
+// Webhook route MUST be registered before express.json() middleware
+// Stripe requires raw body for signature verification
+app.use('/api/webhook', webhookRouter);
 
 //middlewares
 app.use(express.json());
@@ -500,6 +506,9 @@ io.on('connection', (socket) => {
     // Handle disconnect if needed
   });
 });
+
+// Start payment recovery job (re-publishes stuck QUEUED records to SQS)
+startPaymentRecoveryJob();
 
 // Change app.listen to server.listen
 server.listen(port, () => {

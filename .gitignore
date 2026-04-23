@@ -16,6 +16,11 @@ build/
 */dist/
 */build/
 
+# Java build output
+target/
+*/target/
+**/target/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: consumer
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:Click&Care}
+
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      region:
+        static: ${AWS_REGION:ap-south-1}
+
+sqs:
+  payment-queue-url: ${SQS_PAYMENT_QUEUE_URL}
+  notification-queue-url: ${SQS_NOTIFICATION_QUEUE_URL}
+
+logging:
+  level:
+    com.clickandcare: DEBUG
+    io.awspring.cloud.sqs: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
