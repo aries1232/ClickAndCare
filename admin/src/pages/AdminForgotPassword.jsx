@@ -1,6 +1,6 @@
 import React from 'react';
-import ForgotEmailForm from '../Components/auth/ForgotEmailForm.jsx';
-import AdminResetPasswordForm from '../Components/auth/AdminResetPasswordForm.jsx';
+import ForgotEmailForm from '../components/auth/ForgotEmailForm.jsx';
+import AdminResetPasswordForm from '../components/auth/AdminResetPasswordForm.jsx';
 import { useAdminForgotPassword } from '../hooks/useAdminForgotPassword';
 
 const InfoBox = () => (

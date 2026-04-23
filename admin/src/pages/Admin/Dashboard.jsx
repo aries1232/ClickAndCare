@@ -1,9 +1,9 @@
 import React from 'react';
 import { useAdminDashboard } from '../../hooks/useAdminDashboard';
-import StatsCards from '../../Components/admin/dashboard/StatsCards.jsx';
-import MigrationBanner from '../../Components/admin/dashboard/MigrationBanner.jsx';
-import ActivityLogsBanner from '../../Components/admin/dashboard/ActivityLogsBanner.jsx';
-import RecentAppointments from '../../Components/admin/dashboard/RecentAppointments.jsx';
+import StatsCards from '../../components/admin/dashboard/StatsCards.jsx';
+import MigrationBanner from '../../components/admin/dashboard/MigrationBanner.jsx';
+import ActivityLogsBanner from '../../components/admin/dashboard/ActivityLogsBanner.jsx';
+import RecentAppointments from '../../components/admin/dashboard/RecentAppointments.jsx';
 
 const Dashboard = () => {
   const { dashData, isApproving, approveExistingDoctors } = useAdminDashboard();

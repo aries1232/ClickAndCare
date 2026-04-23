@@ -1,10 +1,10 @@
 import React from 'react';
-import AuthLayout from '../Components/auth/AuthLayout.jsx';
-import { AuthIcon, DoctorIcon } from '../Components/auth/AuthIcon.jsx';
-import EmailField from '../Components/auth/EmailField.jsx';
-import PasswordField from '../Components/auth/PasswordField.jsx';
-import SubmitButton from '../Components/auth/SubmitButton.jsx';
-import AuthLinks from '../Components/auth/AuthLinks.jsx';
+import AuthLayout from '../components/auth/AuthLayout.jsx';
+import { AuthIcon, DoctorIcon } from '../components/auth/AuthIcon.jsx';
+import EmailField from '../components/auth/EmailField.jsx';
+import PasswordField from '../components/auth/PasswordField.jsx';
+import SubmitButton from '../components/auth/SubmitButton.jsx';
+import AuthLinks from '../components/auth/AuthLinks.jsx';
 import { useDoctorLogin } from '../hooks/useDoctorLogin';
 
 const Icon = () => <AuthIcon accent="green"><DoctorIcon /></AuthIcon>;
