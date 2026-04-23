@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { AppContext } from '../context/AppContext';
 import { fetchUserUnreadCounts } from '../services/userApi';
-import { UNREAD_POLL_INTERVAL_MS } from '../utils/constants';
 
 export const useUnreadCounts = () => {
   const { token, userData } = useContext(AppContext);
@@ -18,11 +17,11 @@ export const useUnreadCounts = () => {
     }
   }, [token, userData?._id]);
 
+  // One-shot fetch on mount / login. Real-time updates arrive via the
+  // unreadCountUpdate / newMessage / resetUnreadCount DOM events below
+  // (bridged from the socket in SocketContext).
   useEffect(() => {
-    if (!(token && userData?._id)) return;
-    refetch();
-    const id = setInterval(refetch, UNREAD_POLL_INTERVAL_MS);
-    return () => clearInterval(id);
+    if (token && userData?._id) refetch();
   }, [token, userData, refetch]);
 
   useEffect(() => {

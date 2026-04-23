@@ -227,7 +227,6 @@ const loginUser = async (req, res) => {
     if (isMatch) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       res.json({ success: true, token });
-      console.log("login occurred");
     } else {
       res.json({ success: false, message: "Invalid Credentials" });
     }
@@ -406,8 +405,7 @@ const cancelAppointment = async (req, res) => {
 
     res.json({ success: true, message: "Appointment Cancelled Successfully!" });
   } catch (error) {
-    console.log("kyu nhi ho rhi padhai");
-    console.log(error);
+    console.error('cancelAppointment error:', error);
     res.json({ success: false, message: error.message });
   }
 };

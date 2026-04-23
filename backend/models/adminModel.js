@@ -49,8 +49,8 @@ const adminSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index for faster queries
-adminSchema.index({ email: 1 });
+// `email` already gets an index from `unique: true` in the field definition;
+// do not declare it again (causes the DuplicateSchemaIndex warning).
 adminSchema.index({ 'recoveryEmails.email': 1 });
 
 const Admin = mongoose.model('Admin', adminSchema);

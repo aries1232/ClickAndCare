@@ -3,15 +3,14 @@ import {allDoctors,loginAdmin, appointmentsAdmin , appointmentCancel , adminDash
 import {changeAvailability} from '../controllers/doctorController.js'
 import upload from '../middlewares/multer.js'
 import adminAuth from '../middlewares/adminAuth.js'
+import { validate } from '../middlewares/validate.js'
 
- 
-
-const adminRouter =express.Router()
+const adminRouter = express.Router()
 
 // Authentication routes
-adminRouter.post('/login',loginAdmin)
-adminRouter.post('/forgot-password', adminForgotPassword)
-adminRouter.post('/reset-password', adminResetPassword)
+adminRouter.post('/login', validate({ email: 'email', password: 'nonEmpty' }), loginAdmin)
+adminRouter.post('/forgot-password', validate({ email: 'email' }), adminForgotPassword)
+adminRouter.post('/reset-password', validate({ email: 'email', otp: 'otp', newPassword: 'password' }), adminResetPassword)
 
 // Protected routes
 adminRouter.get('/dashboard',adminAuth,adminDashboard);

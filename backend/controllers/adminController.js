@@ -383,11 +383,8 @@ const appointmentCancel =async(req,res)=>{
       res.json({success:true,message:"Appointment Cancelled Successfully!"})
       
     } catch (error) {
-      
-      console.log("kyu nhi ho rhi padhai");
-      console.log(error)
-      res.json({success:false,message:error.message})
-      
+      console.error('cancelAppointment error:', error);
+      res.json({ success: false, message: error.message });
     }
   }
 
@@ -791,35 +788,21 @@ const removeRecoveryEmail = async (req, res) => {
 const toggleRecoveryEmail = async (req, res) => {
     try {
         const { email } = req.params;
-        
-        console.log('Toggle recovery email request:', { email, adminId: req.adminId });
-        
+
         const admin = await Admin.findById(req.adminId);
         if (!admin) {
             return res.json({ success: false, message: "Admin not found" });
         }
-        
-        console.log('Admin found:', { adminEmail: admin.email, recoveryEmails: admin.recoveryEmails });
-        
-        // Decode the email parameter and convert to lowercase
+
         const decodedEmail = decodeURIComponent(email).toLowerCase();
-        console.log('Looking for email:', decodedEmail);
-        
-        // Find the email
         const recoveryEmail = admin.recoveryEmails.find(re => re.email === decodedEmail);
         if (!recoveryEmail) {
-            console.log('Recovery email not found. Available emails:', admin.recoveryEmails.map(re => re.email));
             return res.json({ success: false, message: "Recovery email not found" });
         }
-        
-        console.log('Recovery email found:', { email: recoveryEmail.email, currentStatus: recoveryEmail.isActive });
-        
-        // Toggle status
+
         const wasActive = recoveryEmail.isActive;
         recoveryEmail.isActive = !recoveryEmail.isActive;
         await admin.save();
-        
-        console.log('Status toggled to:', recoveryEmail.isActive);
         
         // Send email notification
         try {

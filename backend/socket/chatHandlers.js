@@ -10,7 +10,20 @@ import {
   buildBroadcastMessage,
 } from './messageService.js';
 
+const userRoom = (userId) => `user:${userId}`;
+
+const emitToAppointmentAndParticipants = (io, appointmentId, conversation, event, payload) => {
+  const rooms = [appointmentId, ...conversation.participants.map((p) => userRoom(p.toString()))];
+  io.to(rooms).emit(event, payload);
+};
+
 export const registerChatHandlers = (io, socket) => {
+  // Each socket joins a per-user room so the server can push updates
+  // (unread counts, new messages) even when the user hasn't opened a specific
+  // appointment chat yet. Removes the need for polling /unread-counts.
+  const connectedUserId = socket.handshake.query?.userId;
+  if (connectedUserId) socket.join(userRoom(connectedUserId));
+
   socket.on('joinAppointmentRoom', (appointmentId) => {
     socket.join(appointmentId);
   });
@@ -30,13 +43,16 @@ export const registerChatHandlers = (io, socket) => {
 
       if (senderId !== receiverId) {
         await incrementUnreadCount(conversation, newMessage.receiverId);
-        io.to(appointmentId).emit('unreadCountUpdate', {
+        emitToAppointmentAndParticipants(io, appointmentId, conversation, 'unreadCountUpdate', {
           appointmentId,
           unreadCounts: unreadCountsToObject(conversation),
         });
       }
 
-      io.to(appointmentId).emit('receiveMessage', buildBroadcastMessage(newMessage, appointmentId));
+      // receiveMessage goes to both the appointment room (open chat windows)
+      // and the participant user rooms (so background listeners can update
+      // badges / notify without having joined the appointment room).
+      emitToAppointmentAndParticipants(io, appointmentId, conversation, 'receiveMessage', buildBroadcastMessage(newMessage, appointmentId));
     } catch (error) {
       console.error('Socket: Error processing message:', error);
       io.to(appointmentId).emit('receiveMessage', message);
@@ -80,7 +96,7 @@ export const registerChatHandlers = (io, socket) => {
         const conversation = await Conversation.findOne({ appointmentId });
         if (conversation) {
           await resetUnreadForUser(conversation, userId);
-          io.to(appointmentId).emit('unreadCountUpdate', {
+          emitToAppointmentAndParticipants(io, appointmentId, conversation, 'unreadCountUpdate', {
             appointmentId,
             unreadCounts: unreadCountsToObject(conversation),
           });
@@ -97,7 +113,7 @@ export const registerChatHandlers = (io, socket) => {
       const conversation = await Conversation.findOne({ appointmentId });
       if (!conversation) return;
       await resetUnreadForUser(conversation, userId);
-      io.to(appointmentId).emit('unreadCountUpdate', {
+      emitToAppointmentAndParticipants(io, appointmentId, conversation, 'unreadCountUpdate', {
         appointmentId,
         unreadCounts: unreadCountsToObject(conversation),
       });

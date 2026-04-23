@@ -13,7 +13,6 @@ import {
   DASHBOARD_REFRESH_MS,
   APPOINTMENTS_REFRESH_MS,
   PROFILE_REFRESH_MS,
-  UNREAD_REFRESH_MS,
 } from '../utils/constants';
 
 export const DoctorContext = createContext();
@@ -126,12 +125,14 @@ const DoctorContextProvider = (props) => {
     }
   }, [dToken, getDashData, getAppointments, getProfileData, getUnreadCounts]);
 
+  // Polling: dashboard/appointments/profile only. Unread counts are now
+  // socket-driven (see DOM event listeners below, bridged from the server
+  // via SocketContext).
   useAutoRefresh(
     [
       { fn: () => dToken && getDashData(), ms: DASHBOARD_REFRESH_MS },
       { fn: () => dToken && getAppointments(), ms: APPOINTMENTS_REFRESH_MS },
       { fn: () => dToken && getProfileData(), ms: PROFILE_REFRESH_MS },
-      { fn: () => dToken && getUnreadCounts(), ms: UNREAD_REFRESH_MS },
     ],
     !!dToken,
   );
