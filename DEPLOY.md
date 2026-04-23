@@ -9,6 +9,18 @@ Three targets, all automated on push to `main`:
 | `backend/` REST API | AWS Lambda + API Gateway (Serverless Framework) | `.github/workflows/deploy-backend.yml` |
 | `backend/` Socket.IO | **Stays on an always-on host** (Render/Fly/EC2) | not in this repo's CI |
 
+## Env files: local vs production
+
+Each app has three env layers. The `.env.example` file in each folder lists the variables — copy it to `.env` locally and fill in real values.
+
+| App | Local dev (gitignored) | Production source |
+|---|---|---|
+| `frontend/` | `frontend/.env` | Vercel project env vars |
+| `admin/` | `admin/.env` | Vercel project env vars |
+| `backend/` | `backend/.env` | GitHub repo secrets → forwarded into Lambda by the deploy workflow |
+
+Vite-specific note: the frontend and admin use `import.meta.env.DEV` to force `/api/*` and `/socket.io/*` through the **Vite proxy in dev**, regardless of what `.env` contains. So setting `VITE_BACKEND_URL` locally is a no-op — it only matters in the production build.
+
 ## Why the Socket.IO split
 
 AWS Lambda cannot hold persistent WebSocket connections. The REST API ships to Lambda; the Socket.IO server has to run somewhere always-on. The frontend and admin connect to the two origins via two env vars:
@@ -16,7 +28,7 @@ AWS Lambda cannot hold persistent WebSocket connections. The REST API ships to L
 - `VITE_BACKEND_URL` — the Lambda API Gateway URL (for `/api/*`)
 - `VITE_SOCKET_URL` — the Socket.IO host (for `/socket.io/*`)
 
-Both are empty in dev (Vite proxy handles everything).
+Both are ignored in dev (Vite proxy handles everything).
 
 ---
 

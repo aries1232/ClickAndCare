@@ -8,8 +8,8 @@ import DoctorContextProvider from "./context/DoctorContext.jsx";
 import AppContextProvider from "./context/AppContext.jsx";
 import { SocketContextProvider } from "./context/SocketContext.jsx";
 
-// Dev: empty → relative URLs proxied by Vite. Prod: Lambda origin.
-if (import.meta.env.VITE_BACKEND_URL) {
+// Dev: always relative (Vite proxy handles /api/*). Prod: Lambda origin.
+if (!import.meta.env.DEV && import.meta.env.VITE_BACKEND_URL) {
   axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 }
 

@@ -19,7 +19,7 @@ export const SocketContextProvider = ({ children }) => {
       // Dev: Vite proxies `/socket.io` to the local backend, so `/` = same-origin works.
       // Prod: the socket server lives on a separate always-on host (Lambda can't hold
       // WebSockets), so we point at VITE_SOCKET_URL directly.
-      const socketUrl = import.meta.env.VITE_SOCKET_URL || '/';
+      const socketUrl = import.meta.env.DEV ? '/' : (import.meta.env.VITE_SOCKET_URL || '/');
       const newSocket = io(socketUrl, {
         path: '/socket.io',
         query: { userId: userData._id },

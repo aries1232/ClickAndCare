@@ -22,7 +22,7 @@ export const SocketContextProvider = ({ children }) => {
     if (currentUser && currentUser._id) {
       if (socket && socket.connected) return;
       // Dev: Vite proxies /socket.io to local backend. Prod: separate always-on host.
-      const socketUrl = import.meta.env.VITE_SOCKET_URL || '/';
+      const socketUrl = import.meta.env.DEV ? '/' : (import.meta.env.VITE_SOCKET_URL || '/');
       const newSocket = io(socketUrl, {
         path: '/socket.io',
         query: { userId: currentUser._id },

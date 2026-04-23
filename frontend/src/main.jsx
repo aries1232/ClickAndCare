@@ -8,10 +8,11 @@ import "./index.css";
 import AppContextProvider from "./context/AppContext.jsx";
 import { SocketContextProvider } from './context/SocketContext.jsx';
 
-// In dev this is empty → relative `/api/*` URLs hit Vite's proxy.
-// In prod this is set to the Lambda API origin so the same relative service
-// code works without a per-call template.
-if (import.meta.env.VITE_BACKEND_URL) {
+// Dev: always use relative URLs so `/api/*` goes through Vite's proxy
+// (see vite.config.js). Prod: prefix every request with the Lambda API
+// origin. `import.meta.env.DEV` is true on `npm run dev`, false on build
+// — so this switch is safe regardless of what local .env files set.
+if (!import.meta.env.DEV && import.meta.env.VITE_BACKEND_URL) {
   axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 }
 
