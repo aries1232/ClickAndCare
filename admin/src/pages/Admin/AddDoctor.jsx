@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAddDoctor } from '../../hooks/useAddDoctor';
-import DoctorImageUpload from '../../Components/doctor-form/DoctorImageUpload.jsx';
-import { PersonalSection, ProfessionalSection, AboutSection } from '../../Components/doctor-form/DoctorFormSections.jsx';
+import DoctorImageUpload from '../../components/doctor-form/DoctorImageUpload.jsx';
+import { PersonalSection, ProfessionalSection, AboutSection } from '../../components/doctor-form/DoctorFormSections.jsx';
 
 const AddDoctor = () => {
   const { form, setField, docImg, setDocImg, loading, onSubmit, resetForm, goToList } = useAddDoctor();
