@@ -7,7 +7,7 @@ import { useSlotGeneration } from './useSlotGeneration';
 
 export const useAppointmentBooking = () => {
   const { docId } = useParams();
-  const { doctors, backendUrl, token, getDoctors } = useContext(AppContext);
+  const { doctors, token, getDoctors } = useContext(AppContext);
   const navigate = useNavigate();
 
   const [docInfo, setDocInfo] = useState(null);
@@ -33,7 +33,7 @@ export const useAppointmentBooking = () => {
     try {
       const date = docSlot[slotIndex][0].dateTime;
       const slotDate = `${date.getDate()}_${date.getMonth() + 1}_${date.getFullYear()}`;
-      const data = await bookAppointmentApi(backendUrl, token, { docId, slotDate, slotTime });
+      const data = await bookAppointmentApi(token, { docId, slotDate, slotTime });
 
       if (data.success) {
         toast.success(data.message);

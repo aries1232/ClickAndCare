@@ -16,7 +16,8 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     if (userData && userData._id) {
       if (socket && socket.connected) return;
-      const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000', {
+      const newSocket = io('/', {
+        path: '/socket.io',
         query: { userId: userData._id },
         transports: ['websocket', 'polling'],
         reconnection: true,

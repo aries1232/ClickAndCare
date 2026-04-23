@@ -3,18 +3,18 @@ import { AppContext } from '../context/AppContext';
 import { fetchUserUnreadCounts } from '../services/userApi';
 
 export const useAppointmentUnreadCounts = () => {
-  const { token, backendUrl, userData } = useContext(AppContext);
+  const { token, userData } = useContext(AppContext);
   const [unreadCounts, setUnreadCounts] = useState({});
 
   const refetch = useCallback(async () => {
-    if (!token || !backendUrl) return;
+    if (!token) return;
     try {
-      const counts = await fetchUserUnreadCounts({ backendUrl, token });
+      const counts = await fetchUserUnreadCounts({ token });
       setUnreadCounts(counts || {});
     } catch {
       // ignore
     }
-  }, [token, backendUrl]);
+  }, [token]);
 
   useEffect(() => {
     if (token) refetch();

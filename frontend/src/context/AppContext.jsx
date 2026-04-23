@@ -7,7 +7,6 @@ export const AppContext = createContext();
 
 const AppContextProvider = (props) => {
   const currencySymbol = '$';
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const [token, setToken] = useState(localStorage.getItem('token') || false);
   const [userData, setUserData] = useState(false);
@@ -15,7 +14,7 @@ const AppContextProvider = (props) => {
 
   const getDoctors = async () => {
     try {
-      const data = await getDoctorsApi(backendUrl);
+      const data = await getDoctorsApi();
       if (data.success) setDoctors(data.doctors);
       else toast.error(data.message);
     } catch (error) {
@@ -25,7 +24,7 @@ const AppContextProvider = (props) => {
 
   const loadUserProfileData = async () => {
     try {
-      const data = await getUserProfile(backendUrl, token);
+      const data = await getUserProfile(token);
       if (data.success) setUserData(data.userData);
       else toast.error(data.message);
     } catch (error) {
@@ -38,17 +37,13 @@ const AppContextProvider = (props) => {
   }, []);
 
   useEffect(() => {
-    if (token) {
-      loadUserProfileData();
-    } else {
-      setUserData(false);
-    }
+    if (token) loadUserProfileData();
+    else setUserData(false);
   }, [token]);
 
   const value = {
     doctors,
     token, setToken,
-    backendUrl,
     userData, setUserData,
     loadUserProfileData, getDoctors,
     currencySymbol,

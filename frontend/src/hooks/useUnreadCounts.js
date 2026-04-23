@@ -1,30 +1,29 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { AppContext } from '../context/AppContext';
 import { fetchUserUnreadCounts } from '../services/userApi';
-
-const POLL_INTERVAL_MS = 30000;
+import { UNREAD_POLL_INTERVAL_MS } from '../utils/constants';
 
 export const useUnreadCounts = () => {
-  const { token, backendUrl, userData } = useContext(AppContext);
+  const { token, userData } = useContext(AppContext);
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
   const refetch = useCallback(async () => {
-    if (!token || !backendUrl || !userData?._id) return;
+    if (!token || !userData?._id) return;
     try {
-      const counts = await fetchUserUnreadCounts({ backendUrl, token });
+      const counts = await fetchUserUnreadCounts({ token });
       const total = Object.values(counts).reduce((sum, c) => sum + c, 0);
       setTotalUnreadCount(total);
     } catch {
       setTotalUnreadCount(0);
     }
-  }, [token, backendUrl, userData?._id]);
+  }, [token, userData?._id]);
 
   useEffect(() => {
-    if (!(token && backendUrl && userData?._id)) return;
+    if (!(token && userData?._id)) return;
     refetch();
-    const id = setInterval(refetch, POLL_INTERVAL_MS);
+    const id = setInterval(refetch, UNREAD_POLL_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [token, backendUrl, userData, refetch]);
+  }, [token, userData, refetch]);
 
   useEffect(() => {
     const currentUserId = userData?._id || userData?.id;
@@ -37,15 +36,11 @@ export const useUnreadCounts = () => {
       }
     };
 
-    const handleResetUnreadCount = () => {
-      refetch();
-    };
+    const handleResetUnreadCount = () => refetch();
 
     const handleNewMessage = (event) => {
       const { message } = event.detail;
-      if (message.sender !== currentUserId) {
-        refetch();
-      }
+      if (message.sender !== currentUserId) refetch();
     };
 
     window.addEventListener('unreadCountUpdate', handleUnreadCountUpdate);

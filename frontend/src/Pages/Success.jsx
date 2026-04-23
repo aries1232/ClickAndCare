@@ -1,34 +1,31 @@
-import React, { useContext, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { AppContext } from "../context/AppContext.jsx";
-import { updatePaymentStatus } from "../services/appointmentApi";
+import React, { useContext, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { AppContext } from '../context/AppContext.jsx';
+import { updatePaymentStatus } from '../services/appointmentApi';
 
 const Success = () => {
-  const { backendUrl, token } = useContext(AppContext);
+  const { token } = useContext(AppContext);
   const { appointmentId } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!appointmentId) {
-      toast.warn("Appointment ID is missing.");
-      navigate("/");
+      toast.warn('Appointment ID is missing.');
+      navigate('/');
       return;
     }
 
     (async () => {
       try {
-        const data = await updatePaymentStatus(backendUrl, token, { appointmentId });
-        if (data.success) {
-          toast.success("Payment status updated successfully");
-        } else {
-          toast.error(data.message || "Payment update failed.");
-        }
-      } catch (error) {
-        toast.error("Error updating payment status.");
+        const data = await updatePaymentStatus(token, { appointmentId });
+        if (data.success) toast.success('Payment status updated successfully');
+        else toast.error(data.message || 'Payment update failed.');
+      } catch {
+        toast.error('Error updating payment status.');
       }
     })();
-  }, [appointmentId, backendUrl, token, navigate]);
+  }, [appointmentId, token, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
