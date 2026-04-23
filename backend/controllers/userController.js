@@ -16,6 +16,7 @@ import {
 } from "../utils/emailService.js";
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
+import { getPaginatedMessages } from '../utils/chatPagination.js';
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -226,7 +227,6 @@ const loginUser = async (req, res) => {
     if (isMatch) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       res.json({ success: true, token });
-      console.log("login occurred");
     } else {
       res.json({ success: false, message: "Invalid Credentials" });
     }
@@ -405,8 +405,7 @@ const cancelAppointment = async (req, res) => {
 
     res.json({ success: true, message: "Appointment Cancelled Successfully!" });
   } catch (error) {
-    console.log("kyu nhi ho rhi padhai");
-    console.log(error);
+    console.error('cancelAppointment error:', error);
     res.json({ success: false, message: error.message });
   }
 };
@@ -587,37 +586,14 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// Fetch chat messages for an appointment
+// Fetch chat messages for an appointment (cursor-paginated, newest page first load)
 const getAppointmentChatMessages = async (req, res) => {
   try {
     const { appointmentId } = req.params;
-    if (!appointmentId) return res.status(400).json({ success: false, message: 'Missing appointmentId' });
-
-    const conversation = await Conversation.findOne({ appointmentId })
-      .populate({
-        path: 'messages',
-        options: { sort: { createdAt: 1 } },
-      });
-
-    if (!conversation) return res.status(404).json({ success: false, message: 'No chat found for this appointment' });
-
-    // Transform messages to match ChatBox expected format
-    const transformedMessages = conversation.messages.map(msg => ({
-      _id: msg._id,
-      sender: msg.senderId,
-      message: msg.message,
-      messageType: msg.messageType,
-      fileUrl: msg.fileUrl,
-      fileName: msg.fileName,
-      fileSize: msg.fileSize,
-      status: msg.status,
-      deliveredAt: msg.deliveredAt,
-      readAt: msg.readAt,
-      time: new Date(msg.createdAt).toLocaleTimeString(),
-      createdAt: msg.createdAt
-    }));
-
-    res.json({ success: true, messages: transformedMessages });
+    const { limit, before } = req.query;
+    const result = await getPaginatedMessages({ appointmentId, limit, before });
+    if (result.error) return res.status(result.error.status).json({ success: false, message: result.error.message });
+    res.json({ success: true, messages: result.messages, hasMore: result.hasMore, nextBefore: result.nextBefore });
   } catch (err) {
     console.error('User API: Error in getAppointmentChatMessages:', err);
     res.status(500).json({ success: false, message: err.message });

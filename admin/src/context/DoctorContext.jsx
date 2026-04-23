@@ -1,316 +1,178 @@
-import { createContext, useState, useEffect, useRef } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
+import { createContext, useCallback, useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import {
+  getDoctorAppointments,
+  getDoctorDashboard,
+  getDoctorProfile,
+  getDoctorUnreadCounts,
+  completeAppointment as completeAppointmentApi,
+  cancelAppointmentDoctor,
+} from '../services/doctorApi';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import {
+  DASHBOARD_REFRESH_MS,
+  APPOINTMENTS_REFRESH_MS,
+  PROFILE_REFRESH_MS,
+} from '../utils/constants';
 
 export const DoctorContext = createContext();
 
+const errMsg = (e, fallback) => e.response?.data?.message || e.message || fallback;
+
 const DoctorContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-  const [dToken, setDToken] = useState(
-    localStorage.getItem("dToken") ? localStorage.getItem("dToken") : ""
-  );
+  const [dToken, setDToken] = useState(localStorage.getItem('dToken') || '');
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState(false);
   const [profileData, setProfileData] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState({});
-  
-  // Real-time update intervals
-  const dashboardIntervalRef = useRef(null);
-  const appointmentsIntervalRef = useRef(null);
-  const profileIntervalRef = useRef(null);
-  const unreadCountsIntervalRef = useRef(null);
-  
-  // Auto-refresh intervals (in milliseconds)
-  const DASHBOARD_REFRESH_INTERVAL = 30000; // 30 seconds
-  const APPOINTMENTS_REFRESH_INTERVAL = 20000; // 20 seconds
-  const PROFILE_REFRESH_INTERVAL = 60000; // 60 seconds
-  const UNREAD_COUNTS_REFRESH_INTERVAL = 15000; // 15 seconds
 
-  // Calculate total unread count
-  const totalUnreadCount = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
+  const totalUnreadCount = Object.values(unreadCounts).reduce((s, c) => s + c, 0);
 
+  const updateUnreadCount = useCallback((appointmentId, count) => {
+    setUnreadCounts((prev) => ({ ...prev, [appointmentId]: count }));
+  }, []);
 
+  const incrementUnreadCount = useCallback((appointmentId) => {
+    setUnreadCounts((prev) => ({ ...prev, [appointmentId]: (prev[appointmentId] || 0) + 1 }));
+  }, []);
 
-  const getUnreadCounts = async () => {
+  const resetUnreadCount = useCallback((appointmentId) => {
+    setUnreadCounts((prev) => ({ ...prev, [appointmentId]: 0 }));
+  }, []);
+
+  const getUnreadCounts = useCallback(async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/doctor/unread-counts", {
-        headers: { dToken },
-      });
-      if (data.success) {
-        // console.log('DoctorContext: Received unread counts:', data.unreadCounts);
-        setUnreadCounts(data.unreadCounts);
-      } else {
-        console.error('DoctorContext: Failed to fetch unread counts:', data.message);
-      }
-    } catch (error) {
-      console.error('DoctorContext: Error fetching unread counts:', error);
+      const data = await getDoctorUnreadCounts(dToken);
+      if (data.success) setUnreadCounts(data.unreadCounts);
+    } catch (e) {
+      console.error('DoctorContext: Error fetching unread counts:', e);
     }
-  };
+  }, [dToken]);
 
-  const updateUnreadCount = (appointmentId, count) => {
-    setUnreadCounts(prev => ({
-      ...prev,
-      [appointmentId]: count
-    }));
-  };
-
-  const incrementUnreadCount = (appointmentId) => {
-    setUnreadCounts(prev => {
-      const currentCount = prev[appointmentId] || 0;
-      return {
-        ...prev,
-        [appointmentId]: currentCount + 1
-      };
-    });
-  };
-
-  const resetUnreadCount = (appointmentId) => {
-    setUnreadCounts(prev => ({
-      ...prev,
-      [appointmentId]: 0
-    }));
-  };
-
-  const getAppointments = async () => {
+  const getAppointments = useCallback(async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/doctor/appointments", {
-        headers: { dToken },
-      });
+      const data = await getDoctorAppointments(dToken);
+      if (data.success) setAppointments(data.appointments);
+      else toast.error(data.message);
+    } catch (e) {
+      toast.error(errMsg(e, 'Failed to fetch appointments'));
+    }
+  }, [dToken]);
+
+  const getDashData = useCallback(async () => {
+    try {
+      const data = await getDoctorDashboard(dToken);
+      if (data.success) setDashData(data.dashData);
+      else toast.error(data.message);
+    } catch (e) {
+      toast.error(errMsg(e, 'Failed to fetch dashboard data'));
+    }
+  }, [dToken]);
+
+  const getProfileData = useCallback(async () => {
+    try {
+      const data = await getDoctorProfile(dToken);
+      if (data.success) setProfileData(data.doctorData);
+      else toast.error(data.message);
+    } catch (e) {
+      toast.error(errMsg(e, 'Failed to fetch profile'));
+    }
+  }, [dToken]);
+
+  const completeAppointment = async (appointmentId) => {
+    setAppointments((prev) => prev.map((a) => (a._id === appointmentId ? { ...a, isCompleted: true } : a)));
+    try {
+      const data = await completeAppointmentApi(dToken, appointmentId);
       if (data.success) {
-        setAppointments(data.appointments);
+        toast.success(data.message);
+        getAppointments();
+        getDashData();
       } else {
         toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch appointments");
-    }
-  };
-
-  const completeAppointment = async (appointmentId) =>{
-    // Optimistic update - immediately update UI
-    setAppointments(prevAppointments => 
-      prevAppointments.map(appointment => 
-        appointment._id === appointmentId 
-          ? { ...appointment, isCompleted: true }
-          : appointment
-      )
-    );
-
-    try {
-      const {data} = await axios.post(backendUrl + '/api/doctor/complete-appointment',{appointmentId},{headers:{dToken}})
-      
-      if(data.success){
-        toast.success(data.message)
-        // Refresh to ensure consistency
-        getAppointments()
-        getDashData() // Update dashboard stats
-      }
-      else{
-        toast.error(data.message)
-        // Revert optimistic update on error
-        getAppointments()
-      }
-
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to complete appointment");
-      // Revert optimistic update on error
-      getAppointments()
-    }
-  }
-
-  const cancelAppointment = async (appointmentId) =>{
-    // Optimistic update - immediately update UI
-    setAppointments(prevAppointments => 
-      prevAppointments.map(appointment => 
-        appointment._id === appointmentId 
-          ? { ...appointment, cancelled: true }
-          : appointment
-      )
-    );
-
-    try {
-      const {data} = await axios.post(backendUrl + '/api/doctor/cancel-appointment',{appointmentId},{headers:{dToken}})
-      
-      if(data.success){
-        toast.success(data.message)
-        // Refresh to ensure consistency
-        getAppointments()
-        getDashData() // Update dashboard stats
-      }
-      else{
-        toast.error(data.message)
-        // Revert optimistic update on error
-        getAppointments()
-      }
-
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to cancel appointment");
-      // Revert optimistic update on error
-      getAppointments()
-    }
-  }
-
-  const getDashData = async () => {
-    try {
-
-      const {data} = await axios.get(backendUrl + '/api/doctor/dashboard',{headers:{dToken}})
-
-      if(data.success){
-        setDashData(data.dashData)
-      }
-      else{
-        toast.error(data.message)
-      }
-    
-      
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch dashboard data");
-      
-    }
-  }
-
-  const getProfileData = async () => {
-    try {
-      const {data} = await axios.get(backendUrl + '/api/doctor/profile',{headers:{dToken}})
-      if(data.success){
-        setProfileData(data.doctorData)
-      }else{
-        toast.error(data.message)
-      }
-      
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch profile");
-      
-    }
-  }
-
-  // Start auto-refresh intervals
-  const startAutoRefresh = () => {
-    // Clear existing intervals
-    stopAutoRefresh();
-    
-    // Start dashboard auto-refresh
-    dashboardIntervalRef.current = setInterval(() => {
-      if (dToken) {
-        getDashData();
-      }
-    }, DASHBOARD_REFRESH_INTERVAL);
-    
-    // Start appointments auto-refresh
-    appointmentsIntervalRef.current = setInterval(() => {
-      if (dToken) {
         getAppointments();
       }
-    }, APPOINTMENTS_REFRESH_INTERVAL);
-    
-    // Start profile auto-refresh
-    profileIntervalRef.current = setInterval(() => {
-      if (dToken) {
-        getProfileData();
-      }
-    }, PROFILE_REFRESH_INTERVAL);
-
-    // Start unread counts auto-refresh
-    unreadCountsIntervalRef.current = setInterval(() => {
-      if (dToken) {
-        getUnreadCounts();
-      }
-    }, UNREAD_COUNTS_REFRESH_INTERVAL);
-  };
-
-  // Stop auto-refresh intervals
-  const stopAutoRefresh = () => {
-    if (dashboardIntervalRef.current) {
-      clearInterval(dashboardIntervalRef.current);
-      dashboardIntervalRef.current = null;
-    }
-    if (appointmentsIntervalRef.current) {
-      clearInterval(appointmentsIntervalRef.current);
-      appointmentsIntervalRef.current = null;
-    }
-    if (profileIntervalRef.current) {
-      clearInterval(profileIntervalRef.current);
-      profileIntervalRef.current = null;
-    }
-    if (unreadCountsIntervalRef.current) {
-      clearInterval(unreadCountsIntervalRef.current);
-      unreadCountsIntervalRef.current = null;
+    } catch (e) {
+      toast.error(errMsg(e, 'Failed to complete appointment'));
+      getAppointments();
     }
   };
 
-  // Initialize data and start auto-refresh when token changes
+  const cancelAppointment = async (appointmentId) => {
+    setAppointments((prev) => prev.map((a) => (a._id === appointmentId ? { ...a, cancelled: true } : a)));
+    try {
+      const data = await cancelAppointmentDoctor(dToken, appointmentId);
+      if (data.success) {
+        toast.success(data.message);
+        getAppointments();
+        getDashData();
+      } else {
+        toast.error(data.message);
+        getAppointments();
+      }
+    } catch (e) {
+      toast.error(errMsg(e, 'Failed to cancel appointment'));
+      getAppointments();
+    }
+  };
+
   useEffect(() => {
     if (dToken) {
-      // Initial data load
       getDashData();
       getAppointments();
       getProfileData();
-      getUnreadCounts(); // Initial unread count fetch
-      
-      // Start auto-refresh
-      startAutoRefresh();
-    } else {
-      // Stop auto-refresh when logged out
-      stopAutoRefresh();
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      stopAutoRefresh();
-    };
-  }, [dToken]);
-
-  // Fetch unread counts when profile data is loaded (for socket events)
-  useEffect(() => {
-    if (dToken && profileData) {
       getUnreadCounts();
     }
-  }, [dToken, profileData]);
+  }, [dToken, getDashData, getAppointments, getProfileData, getUnreadCounts]);
 
-  // Socket event listeners for real-time unread count updates
+  // Polling: dashboard/appointments/profile only. Unread counts are now
+  // socket-driven (see DOM event listeners below, bridged from the server
+  // via SocketContext).
+  useAutoRefresh(
+    [
+      { fn: () => dToken && getDashData(), ms: DASHBOARD_REFRESH_MS },
+      { fn: () => dToken && getAppointments(), ms: APPOINTMENTS_REFRESH_MS },
+      { fn: () => dToken && getProfileData(), ms: PROFILE_REFRESH_MS },
+    ],
+    !!dToken,
+  );
+
   useEffect(() => {
-    if (!dToken || !profileData) return;
+    if (dToken && profileData) getUnreadCounts();
+  }, [dToken, profileData, getUnreadCounts]);
+
+  // Socket-driven DOM events for unread-count updates
+  useEffect(() => {
+    if (!dToken || !profileData) return undefined;
+    const currentUserId = profileData?._id || profileData?.id;
 
     const handleNewMessage = (event) => {
       const { appointmentId, message } = event.detail;
-      const currentUserId = profileData?._id || profileData?.id;
-      
-      // Check if this is the doctor's own message (sent within last 5 seconds)
-      const isOwnRecentMessage = message.createdAt && 
-        (new Date() - new Date(message.createdAt)) < 5000 && 
-        message.sender && currentUserId && 
-        message.sender.toString() === currentUserId.toString();
-      
-      // Only increment unread count if message is from the other person
-      // Convert both to strings for reliable comparison
-      if (message.sender && currentUserId && 
-          message.sender.toString() !== currentUserId.toString() && 
-          !isOwnRecentMessage) {
+      const isOwnRecent =
+        message.createdAt &&
+        Date.now() - new Date(message.createdAt).getTime() < 5000 &&
+        message.sender?.toString() === currentUserId?.toString();
+      if (message.sender && currentUserId && message.sender.toString() !== currentUserId.toString() && !isOwnRecent) {
         incrementUnreadCount(appointmentId);
       }
     };
 
     const handleResetUnreadCount = (event) => {
-      const { appointmentId } = event.detail;
-      resetUnreadCount(appointmentId);
+      resetUnreadCount(event.detail.appointmentId);
     };
 
     const handleUnreadCountUpdate = (event) => {
       const { appointmentId, unreadCounts: newUnreadCounts } = event.detail;
-      const currentUserId = profileData?._id || profileData?.id;
-      
       if (newUnreadCounts && newUnreadCounts[currentUserId] !== undefined) {
         updateUnreadCount(appointmentId, newUnreadCounts[currentUserId]);
       }
     };
 
-    // Add event listeners
     window.addEventListener('newMessage', handleNewMessage);
     window.addEventListener('resetUnreadCount', handleResetUnreadCount);
     window.addEventListener('unreadCountUpdate', handleUnreadCountUpdate);
-    
+
     return () => {
-      // Clean up event listeners
       window.removeEventListener('newMessage', handleNewMessage);
       window.removeEventListener('resetUnreadCount', handleResetUnreadCount);
       window.removeEventListener('unreadCountUpdate', handleUnreadCountUpdate);
@@ -318,36 +180,18 @@ const DoctorContextProvider = (props) => {
   }, [dToken, profileData, incrementUnreadCount, resetUnreadCount, updateUnreadCount]);
 
   const value = {
-    dToken,
-    setDToken,
     backendUrl,
-    appointments,
-    setAppointments,
-    getAppointments,
-    completeAppointment,
-    cancelAppointment,
-    dashData,
-    setDashData,
-    getDashData,
-    profileData,
-    setProfileData,
-    getProfileData,
-    startAutoRefresh,
-    stopAutoRefresh,
-    unreadCounts,
-    setUnreadCounts,
-    getUnreadCounts,
-    updateUnreadCount,
-    incrementUnreadCount,
-    resetUnreadCount,
-    totalUnreadCount
+    dToken, setDToken,
+    appointments, setAppointments, getAppointments,
+    completeAppointment, cancelAppointment,
+    dashData, setDashData, getDashData,
+    profileData, setProfileData, getProfileData,
+    unreadCounts, setUnreadCounts,
+    getUnreadCounts, updateUnreadCount, incrementUnreadCount, resetUnreadCount,
+    totalUnreadCount,
   };
 
-  return (
-    <DoctorContext.Provider value={value}>
-      {props.children}
-    </DoctorContext.Provider>
-  );
+  return <DoctorContext.Provider value={value}>{props.children}</DoctorContext.Provider>;
 };
 
 export default DoctorContextProvider;

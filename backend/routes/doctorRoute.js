@@ -2,16 +2,17 @@ import express from 'express';
 import { appointmentsDoctor, getDoctors, loginDoctor, appointmentCancel,appointmentComplete, doctorDashboard,doctorProfile,updateDoctorProfile, signupDoctor, updateProfilePicture, sendSignupOTP, verifySignupOTP, getAppointmentChatMessages, getUnreadCounts} from '../controllers/doctorController.js';
 import authDoctor from '../middlewares/authDoctor.js';
 import upload from '../middlewares/multer.js';
+import { validate } from '../middlewares/validate.js';
 
 const doctorRouter = express.Router();
 
 // OTP verification routes
-doctorRouter.post('/send-signup-otp', sendSignupOTP);
-doctorRouter.post('/verify-signup-otp', verifySignupOTP);
+doctorRouter.post('/send-signup-otp', validate({ email: 'email' }), sendSignupOTP);
+doctorRouter.post('/verify-signup-otp', validate({ email: 'email', otp: 'otp' }), verifySignupOTP);
 
 doctorRouter.post('/signup', upload.single('image'), signupDoctor);
-doctorRouter.post('/get-doctors',getDoctors);
-doctorRouter.post('/login',loginDoctor);
+doctorRouter.post('/get-doctors', getDoctors);
+doctorRouter.post('/login', validate({ email: 'email', password: 'nonEmpty' }), loginDoctor);
 doctorRouter.get('/appointments',authDoctor,appointmentsDoctor);
 doctorRouter.post('/complete-appointment', authDoctor,appointmentComplete)
 doctorRouter.post('/cancel-appointment', authDoctor,appointmentCancel)

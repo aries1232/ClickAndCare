@@ -313,19 +313,35 @@ const loginAdmin = async (req, res) => {
     }
 };
 
-// Api to get all appointments list
+// Api to get all appointments list (paginated, newest first)
 
-const appointmentsAdmin = async(req,res) => {
+const DEFAULT_LIMIT = 200;
+const MAX_LIMIT = 1000;
+
+const appointmentsAdmin = async (req, res) => {
     try {
-        const appointments =await appointmentModel.find({})
-        res.json({success:true,appointments})
-    } catch (error) {
+        const requestedLimit = Number(req.query.limit);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? Math.min(requestedLimit, MAX_LIMIT)
+            : DEFAULT_LIMIT;
+        const skip = Math.max(0, Number(req.query.skip) || 0);
 
+        const [appointments, total] = await Promise.all([
+            appointmentModel
+                .find({})
+                .sort({ date: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            appointmentModel.countDocuments({}),
+        ]);
+
+        res.json({ success: true, appointments, total, limit, skip });
+    } catch (error) {
         console.log(error);
-        res.json({ success: false, message: error.message , message: "chud gye guru"});
-        
+        res.json({ success: false, message: error.message });
     }
-}
+};
 
 // api for cancelling the appointment by the admin
 
@@ -367,11 +383,8 @@ const appointmentCancel =async(req,res)=>{
       res.json({success:true,message:"Appointment Cancelled Successfully!"})
       
     } catch (error) {
-      
-      console.log("kyu nhi ho rhi padhai");
-      console.log(error)
-      res.json({success:false,message:error.message})
-      
+      console.error('cancelAppointment error:', error);
+      res.json({ success: false, message: error.message });
     }
   }
 
@@ -775,35 +788,21 @@ const removeRecoveryEmail = async (req, res) => {
 const toggleRecoveryEmail = async (req, res) => {
     try {
         const { email } = req.params;
-        
-        console.log('Toggle recovery email request:', { email, adminId: req.adminId });
-        
+
         const admin = await Admin.findById(req.adminId);
         if (!admin) {
             return res.json({ success: false, message: "Admin not found" });
         }
-        
-        console.log('Admin found:', { adminEmail: admin.email, recoveryEmails: admin.recoveryEmails });
-        
-        // Decode the email parameter and convert to lowercase
+
         const decodedEmail = decodeURIComponent(email).toLowerCase();
-        console.log('Looking for email:', decodedEmail);
-        
-        // Find the email
         const recoveryEmail = admin.recoveryEmails.find(re => re.email === decodedEmail);
         if (!recoveryEmail) {
-            console.log('Recovery email not found. Available emails:', admin.recoveryEmails.map(re => re.email));
             return res.json({ success: false, message: "Recovery email not found" });
         }
-        
-        console.log('Recovery email found:', { email: recoveryEmail.email, currentStatus: recoveryEmail.isActive });
-        
-        // Toggle status
+
         const wasActive = recoveryEmail.isActive;
         recoveryEmail.isActive = !recoveryEmail.isActive;
         await admin.save();
-        
-        console.log('Status toggled to:', recoveryEmail.isActive);
         
         // Send email notification
         try {
