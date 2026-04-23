@@ -1,12 +1,12 @@
 # Deployment
 
-Three targets, all automated on push to `main`:
+Three **manual-only** release workflows (trigger from GitHub Actions → Run workflow). No auto-deploy on push.
 
-| Target | Where | Deploy workflow |
+| Target | Where | Workflow |
 |---|---|---|
-| `frontend/` | Vercel | `.github/workflows/deploy-frontend.yml` |
-| `admin/` | Vercel (separate project) | same workflow (matrix) |
-| `backend/` REST API | AWS Lambda + API Gateway (Serverless Framework) | `.github/workflows/deploy-backend.yml` |
+| `frontend/` | Vercel | `.github/workflows/release-frontend.yml` |
+| `admin/` | Vercel (separate project) | `.github/workflows/release-admin.yml` |
+| `backend/` REST API | AWS Lambda + API Gateway (Serverless Framework) | `.github/workflows/release-backend.yml` |
 | `backend/` Socket.IO | **Stays on an always-on host** (Render/Fly/EC2) | not in this repo's CI |
 
 ## Env files: local vs production
@@ -97,24 +97,25 @@ Settings → Secrets and variables → Actions → **New repository secret**:
 
 ---
 
-## Manual deploy (no push)
+## Running a release
 
-- Frontend + admin → GitHub → **Actions** → **Deploy frontends (Vercel)** → Run workflow
-- Backend → GitHub → **Actions** → **Deploy backend (AWS Lambda)** → Run workflow (optionally pick a stage other than `production`)
+Everything is manual — there's no auto-deploy on push. Each app has its own workflow so you can ship them independently.
 
----
+### Frontend (patient site)
+GitHub → **Actions** → **Build & Release — frontend (Vercel)** → **Run workflow**
+- **environment**: `production` or `preview`
+- Runs `vercel pull` → `vercel build` → `vercel deploy` inside `frontend/`.
 
-## What happens on push to `main`
+### Admin (doctor/admin panel)
+GitHub → **Actions** → **Build & Release — admin (Vercel)** → **Run workflow**
+- **environment**: `production` or `preview`
+- Runs the same steps inside `admin/`.
 
-### Frontend (`frontend/**` or `admin/**` changed)
-1. Checkout + Node 20 + `npm ci` per app (matrix)
-2. `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod`
-3. Both apps deploy in parallel
-
-### Backend (`backend/**` changed)
-1. Checkout + Node 20 + `npm ci --omit=dev`
-2. Install `serverless@3`
-3. `serverless deploy --stage production` — packages + uploads to S3, updates the Lambda and API Gateway
+### Backend (REST API on Lambda)
+GitHub → **Actions** → **Build & Release — backend (AWS Lambda)** → **Run workflow**
+- **stage**: `production` or `staging`
+- **confirm**: type `release` (guard against accidental clicks)
+- Runs `npm ci --omit=dev` → `serverless deploy --stage <stage>` — packages + uploads to S3, updates Lambda and API Gateway.
 
 Cold start is ~500–900 ms (Mongo connection cached across warm invocations).
 

@@ -1,25 +1,32 @@
-name: Deploy backend (AWS Lambda)
+name: Build & Release — backend (AWS Lambda)
 
+# Manual-only. Start a run from the Actions tab when you want a new
+# backend build to hit Lambda.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
     inputs:
       stage:
         description: 'Serverless stage to deploy to'
         required: true
         default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      confirm:
+        description: 'Type "release" to confirm'
+        required: true
+        default: ''
 
 concurrency:
-  group: deploy-backend-${{ github.ref }}
-  cancel-in-progress: true
+  group: release-backend-${{ inputs.stage }}
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  release:
     runs-on: ubuntu-latest
+    # Safety rail: user has to type "release" in the input to proceed.
+    if: ${{ inputs.confirm == 'release' }}
     defaults:
       run:
         working-directory: backend
@@ -55,5 +62,5 @@ jobs:
       - name: Install Serverless Framework
         run: npm i -g serverless@3
 
-      - name: Deploy
-        run: serverless deploy --stage ${{ github.event.inputs.stage || 'production' }} --verbose
+      - name: Build & Release (stage=${{ inputs.stage }})
+        run: serverless deploy --stage ${{ inputs.stage }} --verbose
