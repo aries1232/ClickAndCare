@@ -11,6 +11,8 @@ import {
 import { getAppointmentChatMessages } from '../services/chatApi';
 import { useAppointmentUnreadCounts } from './useAppointmentUnreadCounts';
 
+const PAGE_SIZE = 30;
+
 export const useMyAppointments = () => {
   const { token, getDoctors, userData } = useContext(AppContext);
   const { socket } = useSocketContext();
@@ -19,6 +21,8 @@ export const useMyAppointments = () => {
   const [chatAppointment, setChatAppointment] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatHasMoreOlder, setChatHasMoreOlder] = useState(false);
+  const [chatLoadingOlder, setChatLoadingOlder] = useState(false);
   const { unreadCounts } = useAppointmentUnreadCounts();
 
   const getMyAppointments = async () => {
@@ -66,15 +70,43 @@ export const useMyAppointments = () => {
   const handleOpenChat = async (appointment) => {
     setChatAppointment(appointment);
     setChatMessages([]);
+    setChatHasMoreOlder(false);
     setChatLoading(true);
     try {
-      const data = await getAppointmentChatMessages(token, appointment._id);
-      setChatMessages(data.success ? data.messages || [] : []);
+      const data = await getAppointmentChatMessages(token, appointment._id, { limit: PAGE_SIZE });
+      if (data.success) {
+        setChatMessages(data.messages || []);
+        setChatHasMoreOlder(!!data.hasMore);
+      } else {
+        setChatMessages([]);
+      }
     } catch {
       setChatMessages([]);
     }
     setChatOpen(true);
     setChatLoading(false);
+  };
+
+  const loadOlderMessages = async () => {
+    if (!chatAppointment || chatLoadingOlder || !chatHasMoreOlder) return;
+    const oldest = chatMessages[0];
+    if (!oldest) return;
+
+    setChatLoadingOlder(true);
+    try {
+      const data = await getAppointmentChatMessages(token, chatAppointment._id, {
+        limit: PAGE_SIZE,
+        before: oldest.createdAt,
+      });
+      if (data.success) {
+        setChatMessages((prev) => [...(data.messages || []), ...prev]);
+        setChatHasMoreOlder(!!data.hasMore);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setChatLoadingOlder(false);
+    }
   };
 
   const closeChat = () => setChatOpen(false);
@@ -83,7 +115,6 @@ export const useMyAppointments = () => {
     if (token) getMyAppointments();
   }, [token]);
 
-  // Join socket rooms for all appointments
   useEffect(() => {
     if (appointments.length === 0 || !socket) return;
     appointments.forEach((a) => socket.emit('joinAppointmentRoom', a._id));
@@ -93,6 +124,7 @@ export const useMyAppointments = () => {
     appointments,
     unreadCounts,
     chatOpen, chatAppointment, chatMessages, chatLoading,
+    chatHasMoreOlder, chatLoadingOlder, loadOlderMessages,
     userData,
     socket,
     handlePaynow,

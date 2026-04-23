@@ -11,8 +11,23 @@ const DateSeparator = ({ dateStr }) => (
   </div>
 );
 
-const MessageList = React.forwardRef(({ messages, loading, isOwn, endRef }, containerRef) => (
+const LoadOlderButton = ({ loadingOlder, onLoadOlder }) => (
+  <div className="flex justify-center py-2">
+    <button
+      type="button"
+      onClick={onLoadOlder}
+      disabled={loadingOlder}
+      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      {loadingOlder ? 'Loading…' : 'Load earlier messages'}
+    </button>
+  </div>
+);
+
+const MessageList = React.forwardRef(({ messages, loading, isOwn, endRef, hasMoreOlder, loadingOlder, onLoadOlder }, containerRef) => (
   <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2 bg-transparent">
+    {hasMoreOlder && onLoadOlder && <LoadOlderButton loadingOlder={loadingOlder} onLoadOlder={onLoadOlder} />}
+
     {loading ? (
       <>
         <MessageSkeleton />

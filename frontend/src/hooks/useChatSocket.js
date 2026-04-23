@@ -68,9 +68,23 @@ export const useChatSocket = ({ isOpen, appointmentId, socket, user, initialMess
     };
   }, [isOpen, appointmentId, socket]);
 
+  // On appointment change: reset the live list to whatever the parent has.
   useEffect(() => {
     setLiveMessages(initialMessages || []);
-  }, [initialMessages, appointmentId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointmentId]);
+
+  // When the parent pushes a new snapshot for the SAME appointment (older page
+  // loaded, refetch, etc.), merge by _id so we don't drop socket-appended
+  // messages that haven't been written back to the parent yet.
+  useEffect(() => {
+    if (!initialMessages || !initialMessages.length) return;
+    setLiveMessages((prev) => {
+      const byId = new Map(prev.map((m) => [String(m._id), m]));
+      initialMessages.forEach((m) => { if (m?._id) byId.set(String(m._id), m); });
+      return Array.from(byId.values()).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    });
+  }, [initialMessages]);
 
   // Track scroll position for "jump to bottom" button
   useEffect(() => {

@@ -2,8 +2,22 @@ import axios from 'axios';
 
 const authHeader = (token) => ({ headers: { token } });
 
-export const getAppointmentChatMessages = async (token, appointmentId) => {
-  const { data } = await axios.get(`/api/user/appointment/${appointmentId}/chat-messages`, authHeader(token));
+/**
+ * @param {string} token
+ * @param {string} appointmentId
+ * @param {object} [opts]
+ * @param {number} [opts.limit=30]
+ * @param {string|Date} [opts.before] ISO timestamp of the oldest message currently in view;
+ *   pass this to load the page just before it.
+ */
+export const getAppointmentChatMessages = async (token, appointmentId, opts = {}) => {
+  const params = {};
+  if (opts.limit != null) params.limit = opts.limit;
+  if (opts.before) params.before = opts.before;
+  const { data } = await axios.get(
+    `/api/user/appointment/${appointmentId}/chat-messages`,
+    { ...authHeader(token), params },
+  );
   return data;
 };
 

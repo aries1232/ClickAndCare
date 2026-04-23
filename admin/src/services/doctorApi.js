@@ -60,7 +60,13 @@ export const getDoctorUnreadCounts = async (dToken) => {
   const { data } = await axios.get('/api/doctor/unread-counts', auth(dToken));
   return data;
 };
-export const getDoctorAppointmentChatMessages = async (dToken, appointmentId) => {
-  const { data } = await axios.get(`/api/doctor/appointment/${appointmentId}/chat-messages`, auth(dToken));
+export const getDoctorAppointmentChatMessages = async (dToken, appointmentId, opts = {}) => {
+  const params = {};
+  if (opts.limit != null) params.limit = opts.limit;
+  if (opts.before) params.before = opts.before;
+  const { data } = await axios.get(
+    `/api/doctor/appointment/${appointmentId}/chat-messages`,
+    { ...auth(dToken), params },
+  );
   return data;
 };

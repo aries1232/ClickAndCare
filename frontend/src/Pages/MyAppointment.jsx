@@ -8,6 +8,7 @@ const MyAppointment = () => {
   const {
     appointments, unreadCounts,
     chatOpen, chatAppointment, chatMessages, chatLoading,
+    chatHasMoreOlder, chatLoadingOlder, loadOlderMessages,
     userData, socket,
     handlePaynow, cancelAppointment, handleOpenChat, closeChat,
     refreshAppointments,
@@ -32,6 +33,9 @@ const MyAppointment = () => {
         doctor={chatAppointment?.docData}
         messages={chatMessages}
         loading={chatLoading}
+        hasMoreOlder={chatHasMoreOlder}
+        loadingOlder={chatLoadingOlder}
+        onLoadOlder={loadOlderMessages}
         socket={socket}
       />
     </div>

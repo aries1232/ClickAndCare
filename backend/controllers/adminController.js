@@ -313,19 +313,35 @@ const loginAdmin = async (req, res) => {
     }
 };
 
-// Api to get all appointments list
+// Api to get all appointments list (paginated, newest first)
 
-const appointmentsAdmin = async(req,res) => {
+const DEFAULT_LIMIT = 200;
+const MAX_LIMIT = 1000;
+
+const appointmentsAdmin = async (req, res) => {
     try {
-        const appointments =await appointmentModel.find({})
-        res.json({success:true,appointments})
-    } catch (error) {
+        const requestedLimit = Number(req.query.limit);
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? Math.min(requestedLimit, MAX_LIMIT)
+            : DEFAULT_LIMIT;
+        const skip = Math.max(0, Number(req.query.skip) || 0);
 
+        const [appointments, total] = await Promise.all([
+            appointmentModel
+                .find({})
+                .sort({ date: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            appointmentModel.countDocuments({}),
+        ]);
+
+        res.json({ success: true, appointments, total, limit, skip });
+    } catch (error) {
         console.log(error);
-        res.json({ success: false, message: error.message , message: "chud gye guru"});
-        
+        res.json({ success: false, message: error.message });
     }
-}
+};
 
 // api for cancelling the appointment by the admin
 

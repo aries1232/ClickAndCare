@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -15,6 +16,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 
+app.use(compression());
 app.use(express.json());
 app.use(cors(corsOptions));
 

@@ -7,7 +7,7 @@ import MessageList from './chat/MessageList.jsx';
 import ChatComposer from './chat/ChatComposer.jsx';
 import ScrollToBottomButton from './chat/ScrollToBottomButton.jsx';
 
-const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, loading }) => {
+const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, loading, hasMoreOlder, loadingOlder, onLoadOlder }) => {
   const { socket } = useSocketContext();
 
   const chat = useChatSocket({ isOpen, appointmentId, socket, user, initialMessages: messages });
@@ -30,6 +30,9 @@ const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, loadi
           loading={loading}
           isOwn={chat.isOwn}
           endRef={chat.messagesEndRef}
+          hasMoreOlder={hasMoreOlder}
+          loadingOlder={loadingOlder}
+          onLoadOlder={onLoadOlder}
         />
 
         <ChatComposer
