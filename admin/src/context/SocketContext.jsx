@@ -21,7 +21,8 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     if (currentUser && currentUser._id) {
       if (socket && socket.connected) return;
-      const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000', {
+      const newSocket = io('/', {
+        path: '/socket.io',
         query: { userId: currentUser._id },
         transports: ['websocket', 'polling'],
         reconnection: true,
@@ -42,12 +43,17 @@ export const SocketContextProvider = ({ children }) => {
       // Listen for new messages
       newSocket.on('receiveMessage', (message) => {
         // Dispatch custom event for components to handle
-        window.dispatchEvent(new CustomEvent('newMessage', { 
-          detail: { 
-            appointmentId: message.appointmentId, 
-            message 
-          } 
+        window.dispatchEvent(new CustomEvent('newMessage', {
+          detail: {
+            appointmentId: message.appointmentId,
+            message
+          }
         }));
+      });
+
+      // Bridge unreadCountUpdate socket event to DOM event
+      newSocket.on('unreadCountUpdate', (data) => {
+        window.dispatchEvent(new CustomEvent('unreadCountUpdate', { detail: data }));
       });
       
       setSocket(newSocket);
