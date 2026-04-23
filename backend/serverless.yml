@@ -1,0 +1,56 @@
+service: clickandcare-api
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${env:AWS_REGION, 'ap-south-1'}
+  stage: ${opt:stage, 'production'}
+  memorySize: 512
+  timeout: 29  # API Gateway hard cap is 30s
+  logRetentionInDays: 14
+  environment:
+    NODE_ENV: production
+    MONGODB_URI: ${env:MONGODB_URI}
+    JWT_SECRET: ${env:JWT_SECRET}
+    CLOUDINARY_NAME: ${env:CLOUDINARY_NAME}
+    CLOUDINARY_API_KEY: ${env:CLOUDINARY_API_KEY}
+    CLOUDINARY_SECRET_KEY: ${env:CLOUDINARY_SECRET_KEY}
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
+    EMAIL_USER: ${env:EMAIL_USER}
+    EMAIL_PASSWORD: ${env:EMAIL_PASSWORD}
+    FRONTEND_URL: ${env:FRONTEND_URL}
+    ADMIN_URL: ${env:ADMIN_URL}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - ${env:FRONTEND_URL}
+        - ${env:ADMIN_URL}
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - token
+        - atoken
+        - dToken
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
+
+functions:
+  api:
+    handler: lambda.main
+    events:
+      - httpApi: '*'
+
+package:
+  patterns:
+    - '!node_modules/.cache/**'
+    - '!.git/**'
+    - '!scripts/**'
+    - '!README.md'
+    - '!.env*'

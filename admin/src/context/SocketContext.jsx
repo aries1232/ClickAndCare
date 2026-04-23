@@ -21,7 +21,9 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     if (currentUser && currentUser._id) {
       if (socket && socket.connected) return;
-      const newSocket = io('/', {
+      // Dev: Vite proxies /socket.io to local backend. Prod: separate always-on host.
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || '/';
+      const newSocket = io(socketUrl, {
         path: '/socket.io',
         query: { userId: currentUser._id },
         transports: ['websocket', 'polling'],
