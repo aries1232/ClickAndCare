@@ -4,30 +4,23 @@ import jwt from 'jsonwebtoken'
 import appointmentModel from "../models/appointmentModel.js";
 import validator from 'validator';
 import { v2 as cloudinary } from 'cloudinary';
-import nodemailer from 'nodemailer';
 import { logAdminAction } from '../utils/adminLogger.js';
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 import { getPaginatedMessages } from '../utils/chatPagination.js';
+import { sendEmail as sendEmailShared } from '../utils/emailService.js';
 
 // Generate OTP
 const generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Send OTP email
+// Send OTP email — delegates to the shared transporter in utils/emailService.js
+// (the previous inline copy used the wrong API name `createTransporter` and
+// the wrong env var `EMAIL_PASS`, so it likely never worked).
 const sendOTPEmail = async (email, otp) => {
     try {
-        const transporter = nodemailer.createTransporter({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
+        return await sendEmailShared({
             to: email,
             subject: 'ClickAndCare - Email Verification OTP',
             html: `
@@ -41,11 +34,8 @@ const sendOTPEmail = async (email, otp) => {
                     <p>This code will expire in 10 minutes.</p>
                     <p>If you didn't request this code, please ignore this email.</p>
                 </div>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-        return true;
+            `,
+        });
     } catch (error) {
         console.error('Email sending error:', error);
         return false;
