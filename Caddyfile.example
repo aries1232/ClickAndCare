@@ -1,0 +1,24 @@
+# Caddy auto-issues + renews Let's Encrypt SSL for the hostname.
+# Copy this file to /etc/caddy/Caddyfile on the EC2 box, replace the
+# domain, then `sudo systemctl reload caddy`.
+
+socket.chikitsalaya.live {
+    # Forward everything to the Node Socket.IO server on localhost:3000.
+    # Caddy speaks HTTP/2 and HTTP/3 to the browser; node still sees plain HTTP.
+    reverse_proxy localhost:3000 {
+        # Required for WebSocket upgrade
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+    }
+
+    # Cap log spam — Caddy logs every request by default.
+    log {
+        output file /var/log/caddy/socket.log {
+            roll_size 50mb
+            roll_keep 3
+        }
+        level INFO
+    }
+}

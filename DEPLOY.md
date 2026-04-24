@@ -46,6 +46,83 @@ AWS Lambda cannot hold persistent WebSocket connections. The REST API ships to L
 
 Both are ignored in dev (Vite proxy handles everything).
 
+## Socket host: AWS EC2 t4g.nano
+
+We run the same `backend/` code on a tiny EC2 box for Socket.IO. Free for the first 12 months on the AWS Free Tier (750 instance-hours/month covers 24/7), ~$3-4/mo after that.
+
+### One-time EC2 setup
+
+1. **Launch the instance**
+   - AWS Console → EC2 → **Launch instance**
+   - Name: `clickandcare-socket`
+   - AMI: **Amazon Linux 2023** (free-tier eligible)
+   - Instance type: **t4g.nano** (ARM, free tier)
+   - Key pair: create a new one, download the `.pem` (you'll use it for ssh)
+   - Network → Security group rules:
+     - SSH (22) from your IP only
+     - HTTP (80) from anywhere — Caddy uses it for Let's Encrypt cert renewal
+     - HTTPS (443) from anywhere — actual socket traffic
+   - Storage: 8 GB gp3 (default)
+   - Launch
+   - Note the **public IPv4 address**
+
+2. **Point DNS at the box**
+   - Your DNS provider (name.com) → add an `A` record:
+     - Host: `socket`
+     - Answer: `<EC2 public IPv4>`
+     - TTL: 300
+   - Result: `socket.chikitsalaya.live` → your EC2 instance
+
+3. **SSH in and bootstrap**
+   ```bash
+   ssh -i ~/Downloads/your-key.pem ec2-user@<EC2 public IPv4>
+   curl -fsSL https://raw.githubusercontent.com/aries1232/ClickAndCare/main/scripts/setup-ec2.sh | bash
+   ```
+   The bootstrap installs Node 20, pm2, Doppler CLI, Caddy, and clones the repo.
+
+4. **Wire Doppler runtime env**
+   On the EC2 box:
+   ```bash
+   doppler login                 # follow the link, paste the code
+   doppler setup                 # pick clickandcare-be / config prd
+   cd ~/ClickAndCare/backend
+   doppler run -- pm2 start ecosystem.config.cjs
+   pm2 save
+   sudo env PATH=$PATH pm2 startup systemd -u ec2-user --hp /home/ec2-user
+   # pm2 prints a `sudo …` command — paste and run it. This makes pm2
+   # re-launch your server automatically after the box reboots.
+   ```
+
+5. **Set up Caddy for HTTPS**
+   ```bash
+   sudo cp ~/ClickAndCare/Caddyfile.example /etc/caddy/Caddyfile
+   sudo nano /etc/caddy/Caddyfile     # change 'socket.chikitsalaya.live' if needed
+   sudo systemctl enable --now caddy
+   ```
+   Caddy auto-issues a Let's Encrypt cert in ~30s. Test:
+   ```
+   curl https://socket.chikitsalaya.live/api/health
+   ```
+
+6. **Point the frontend + admin at it**
+   In Doppler:
+   - `clickandcare-fe / prd` → `VITE_SOCKET_URL = https://socket.chikitsalaya.live`
+   - `clickandcare-admin / prd` → `VITE_SOCKET_URL = https://socket.chikitsalaya.live`
+   Re-run **Build & Release — frontend** and **Build & Release — admin** in GitHub Actions.
+
+7. **Set a billing alert (so you never get surprised)**
+   AWS Console → Billing → **Budgets** → Create budget → "Zero spend budget" template → email yourself if cost goes over $1.
+
+### Updating after pushing new code
+```bash
+ssh -i your-key.pem ec2-user@<ip>
+cd ~/ClickAndCare && git pull
+cd backend && npm ci --omit=dev
+pm2 restart clickandcare-socket
+```
+
+Or wire it into GitHub Actions later if you want auto-deploy.
+
 ---
 
 ## First-time setup
