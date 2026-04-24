@@ -4,7 +4,11 @@ import { useSocketContext } from '../context/SocketContext.jsx';
 import { FaImage } from 'react-icons/fa';
 import axios from 'axios';
 
-const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// Sockets go to the always-on VITE_SOCKET_URL in prod; REST falls back to a
+// relative URL which Vercel proxies to Lambda. Dev uses the Vite proxy.
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
+  || import.meta.env.VITE_BACKEND_URL
+  || (import.meta.env.DEV ? 'http://localhost:3000' : '');
 
 function formatDate(dateStr) {
   if (!dateStr) return '';

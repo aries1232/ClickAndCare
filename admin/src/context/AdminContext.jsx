@@ -23,7 +23,10 @@ export const AdminContext = createContext();
 const errMsg = (e, fallback) => e.response?.data?.message || e.message || fallback;
 
 const AdminContextProvider = (props) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  // Dev fallback hits the local backend through Vite's proxy. In prod we leave
+  // backendUrl empty so any `${backendUrl}/api/...` URL stays relative — Vercel's
+  // /api/* rewrite then proxies it to Lambda (same-origin from the browser).
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3000' : '');
   const [aToken, setAToken] = useState(localStorage.getItem('aToken') || '');
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
