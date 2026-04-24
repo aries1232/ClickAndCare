@@ -3,45 +3,35 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Debug: Check if environment variables are loaded
-console.log('Email configuration:');
-console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'NOT SET');
-console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'Set' : 'NOT SET');
-
-// Create transporter
+// Generic SMTP transport — works with any provider (Resend, SES, Mailgun, etc.).
+// Defaults are tuned for Resend so you only need EMAIL_USER (e.g. "resend") and
+// EMAIL_PASSWORD (the API key) in env. Override host/port if using a different
+// provider.
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.EMAIL_HOST || 'smtp.resend.com',
+  port: Number(process.env.EMAIL_PORT) || 465,
+  secure: process.env.EMAIL_SECURE !== 'false', // true for 465, false for 587
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
+
+// EMAIL_FROM is the visible "from" address (e.g. "ClickAndCare <noreply@chikitsalaya.live>").
+// Falls back to EMAIL_USER for back-compat with old Gmail setup.
+const fromAddress = process.env.EMAIL_FROM || process.env.EMAIL_USER;
 
 // Generic email sending function
 export const sendEmail = async ({ to, subject, html }) => {
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to,
-    subject,
-    html
-  };
-
   try {
-    console.log('Sending email with options:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject
-    });
-    
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', result.messageId);
+    await transporter.sendMail({ from: fromAddress, to, subject, html });
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
-    console.error('Error details:', {
+    console.error('emailService.sendEmail error:', {
       code: error.code,
       command: error.command,
-      response: error.response
+      response: error.response,
+      message: error.message,
     });
     return false;
   }
@@ -49,11 +39,8 @@ export const sendEmail = async ({ to, subject, html }) => {
 
 // Send OTP verification email
 export const sendOTPEmail = async (email, otp, name) => {
-  console.log('Attempting to send OTP email to:', email);
-  console.log('OTP:', otp);
-  
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: fromAddress,
     to: email,
     subject: 'Email Verification OTP - ClickAndCare',
     html: `
@@ -113,7 +100,7 @@ export const sendOTPEmail = async (email, otp, name) => {
 // Send appointment confirmation email
 export const sendAppointmentConfirmation = async (email, appointmentData, userName) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: fromAddress,
     to: email,
     subject: 'Appointment Confirmation - ClickAndCare',
     html: `
@@ -174,7 +161,7 @@ export const sendPasswordResetOTP = async (email, otp, name) => {
   console.log('OTP:', otp);
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: fromAddress,
     to: email,
     subject: 'Password Reset OTP - ClickAndCare',
     html: `
