@@ -21,12 +21,28 @@ Each app has three env layers. The `.env.example` file in each folder lists the 
 
 Vite-specific note: the frontend and admin use `import.meta.env.DEV` to force `/api/*` and `/socket.io/*` through the **Vite proxy in dev**, regardless of what `.env` contains. So setting `VITE_BACKEND_URL` locally is a no-op — it only matters in the production build.
 
+## How the browser reaches the API in production
+
+In production, the browser calls **same-origin `/api/*`** URLs (no `VITE_BACKEND_URL` needed). Vercel proxies them to Lambda via the `rewrites` rules in:
+
+- [`frontend/vercel.json`](frontend/vercel.json)
+- [`admin/vercel.json`](admin/vercel.json)
+
+Both files point `/api/:path*` → `https://<api-id>.execute-api.<region>.amazonaws.com/api/:path*`. **If your Lambda URL changes** (different region, recreated stack, etc.) update both `vercel.json` files.
+
+Benefits:
+- Browser sees `https://www.chikitsalaya.live/api/...` — clean, same-origin
+- No CORS preflight (browser thinks it's same-origin)
+- Lambda URL never appears in DevTools
+
+Setting `VITE_BACKEND_URL` in production is now optional and only useful for bypassing the Vercel proxy (rarely needed). If both are set, axios's baseURL wins and Vercel rewrites are bypassed.
+
 ## Why the Socket.IO split
 
-AWS Lambda cannot hold persistent WebSocket connections. The REST API ships to Lambda; the Socket.IO server has to run somewhere always-on. The frontend and admin connect to the two origins via two env vars:
+AWS Lambda cannot hold persistent WebSocket connections. The REST API ships to Lambda; the Socket.IO server has to run somewhere always-on. Sockets do **not** go through the Vercel rewrite (`vercel.json` only proxies `/api/*`) — they hit the socket host directly via `VITE_SOCKET_URL`:
 
-- `VITE_BACKEND_URL` — the Lambda API Gateway URL (for `/api/*`)
-- `VITE_SOCKET_URL` — the Socket.IO host (for `/socket.io/*`)
+- `VITE_BACKEND_URL` — optional in prod (Vercel rewrite handles `/api/*`)
+- `VITE_SOCKET_URL` — required in prod, points at the always-on socket host
 
 Both are ignored in dev (Vite proxy handles everything).
 
