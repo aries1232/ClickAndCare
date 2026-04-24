@@ -18,8 +18,13 @@ const transporter = nodemailer.createTransport({
 });
 
 // EMAIL_FROM is the visible "from" address (e.g. "ClickAndCare <noreply@chikitsalaya.live>").
-// Falls back to EMAIL_USER for back-compat with old Gmail setup.
-const fromAddress = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+// We fall back to a hard-coded address on our verified Resend domain rather than
+// EMAIL_USER, because on Resend EMAIL_USER is the literal string "resend" — using
+// it as a MAIL FROM triggers a 550 "Invalid `from` field" rejection.
+const fromAddress = process.env.EMAIL_FROM || 'ClickAndCare <noreply@chikitsalaya.live>';
+if (!process.env.EMAIL_FROM) {
+  console.warn('emailService: EMAIL_FROM not set, using default noreply@chikitsalaya.live');
+}
 
 // Generic email sending function
 export const sendEmail = async ({ to, subject, html }) => {
