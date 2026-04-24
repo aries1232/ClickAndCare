@@ -371,8 +371,7 @@ const appointmentCancel = async(req,res)=>{
     const appointmentData = await appointmentModel.findById(appointmentId);
 
     if(appointmentData&& appointmentData.docId===docId){
-      
-      await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true})
+      await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true, lockExpiresAt:null})
       return res.json({success:true,message:"Appointment Cancelled"})
     }
     else
@@ -509,6 +508,35 @@ const getAppointmentChatMessages = async (req, res) => {
   }
 };
 
+// Returns the booked-slots map for a given doctor:
+//   { "DD_M_YYYY": ["hh:mm AM/PM", ...] }
+// Includes confirmed payments AND active soft locks, so users see in-flight
+// bookings as taken. Public endpoint (used by the patient-facing slot picker).
+const getBookedSlots = async (req, res) => {
+  try {
+    const { docId } = req.params;
+    const now = new Date();
+    const rows = await appointmentModel.find({
+      docId,
+      cancelled: false,
+      $or: [
+        { payment: true },
+        { lockExpiresAt: { $gt: now } },
+      ],
+    }).select('slotDate slotTime');
+
+    const map = {};
+    for (const r of rows) {
+      if (!map[r.slotDate]) map[r.slotDate] = [];
+      map[r.slotDate].push(r.slotTime);
+    }
+    res.json({ success: true, bookedSlots: map });
+  } catch (error) {
+    console.error('getBookedSlots error:', error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 // Get unread counts for doctor's appointments
 const getUnreadCounts = async (req, res) => {
   try {
@@ -552,4 +580,4 @@ const getUnreadCounts = async (req, res) => {
   }
 };
 
-export { signupDoctor, changeAvailability ,getDoctors , loginDoctor , appointmentsDoctor, appointmentCancel, appointmentComplete,doctorDashboard, updateDoctorProfile, doctorProfile, updateProfilePicture, sendSignupOTP, verifySignupOTP, getAppointmentChatMessages, getUnreadCounts};
+export { signupDoctor, changeAvailability ,getDoctors , loginDoctor , appointmentsDoctor, appointmentCancel, appointmentComplete,doctorDashboard, updateDoctorProfile, doctorProfile, updateProfilePicture, sendSignupOTP, verifySignupOTP, getAppointmentChatMessages, getUnreadCounts, getBookedSlots};

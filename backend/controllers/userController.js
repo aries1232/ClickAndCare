@@ -1,6 +1,5 @@
 import validator from "validator";
 import bcrypt from "bcrypt";
-import mongoose from "mongoose";
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
@@ -293,13 +292,31 @@ const updateProfile = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+// BMS-style soft lock window: once a slot is booked but unpaid, it stays
+// "taken" for SOFT_LOCK_MS. After that, the next availability query treats
+// it as free again — no cron, no TTL needed for correctness.
+const SOFT_LOCK_MS = 10 * 60 * 1000;        // booking → first pay click
+const PAYMENT_LOCK_MS = 30 * 60 * 1000;     // refreshed when Stripe session opens
+
+const isSlotTaken = async ({ docId, slotDate, slotTime }) => {
+  return appointmentModel.findOne({
+    docId,
+    slotDate,
+    slotTime,
+    cancelled: false,
+    $or: [
+      { payment: true },
+      { lockExpiresAt: { $gt: new Date() } },
+    ],
+  });
+};
+
 //Api to book appointment
 const bookAppointment = async (req, res) => {
   try {
     const userId = req.user.id;
     const { docId, slotDate, slotTime } = req.body;
 
-    // Check if user is verified
     const user = await userModel.findById(userId);
     if (!user.isVerified) {
       return res.json({
@@ -312,42 +329,39 @@ const bookAppointment = async (req, res) => {
     if (!docData.available) {
       return res.json({ success: false, message: "Doctor Not Available" });
     }
-    let slots_booked = docData.slots_booked;
-    if (slots_booked[slotDate]) {
-      if (slots_booked[slotDate].includes(slotTime)) {
-        return res.json({ success: false, message: "Slot Not Available" });
-      } else {
-        slots_booked[slotDate].push(slotTime);
-      }
-    } else {
-      slots_booked[slotDate] = [];
-      slots_booked[slotDate].push(slotTime);
+
+    const conflict = await isSlotTaken({ docId, slotDate, slotTime });
+    if (conflict) {
+      return res.json({ success: false, message: "Slot Not Available" });
     }
+
     const userData = await userModel.findById(userId).select("-password");
-    delete docData.slots_booked;
+    const docDataForRow = docData.toObject ? docData.toObject() : { ...docData };
+    delete docDataForRow.slots_booked;
+
     const appointmentData = {
       userId,
       docId,
       slotDate,
       slotTime,
       userData,
-      docData,
+      docData: docDataForRow,
       amount: docData.fees,
       date: Date.now(),
+      lockExpiresAt: new Date(Date.now() + SOFT_LOCK_MS),
     };
     const newAppointment = new appointmentModel(appointmentData);
     await newAppointment.save();
-    //save new slots data in docData
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
-    // Send confirmation email
-    await sendAppointmentConfirmation(
-      userData.email,
-      appointmentData,
-      userData.name
-    );
+    // Best-effort confirmation email; failure mustn't roll back the booking.
+    sendAppointmentConfirmation(userData.email, appointmentData, userData.name)
+      .catch((e) => console.error('sendAppointmentConfirmation failed:', e));
 
-    res.json({ success: true, message: "Appointment Booked" });
+    res.json({
+      success: true,
+      message: "Appointment Booked",
+      appointmentId: newAppointment._id,
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -358,17 +372,19 @@ const bookAppointment = async (req, res) => {
 const allAppointments = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    // Delete pending appointments older than 2 minutes
-    const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
-    await appointmentModel.deleteMany({
-      userId,
-      payment: false,
-      date: { $lt: twoMinutesAgo }
-    });
-
-    const data = await appointmentModel.find({ userId }).sort({ date: -1 });
-    //console.log(data);
+    // Hide rows whose soft-lock has expired without payment — they're
+    // effectively abandoned. The row stays in the DB for audit.
+    const now = new Date();
+    const data = await appointmentModel
+      .find({
+        userId,
+        $or: [
+          { payment: true },
+          { cancelled: true },
+          { lockExpiresAt: { $gt: now } },
+        ],
+      })
+      .sort({ date: -1 });
     res.json({ success: true, data });
   } catch (error) {
     console.log(error);
@@ -377,31 +393,22 @@ const allAppointments = async (req, res) => {
 };
 
 //api to cancel user appointment
-
 const cancelAppointment = async (req, res) => {
   try {
     const userId = req.user.id;
     const { appointmentId } = req.body;
     const appointmentData = await appointmentModel.findById(appointmentId);
 
-    if (appointmentData.userId !== userId) {
-      return res.json({ sucess: false, message: "Unauthorized action" });
+    if (!appointmentData || appointmentData.userId !== userId) {
+      return res.json({ success: false, message: "Unauthorized action" });
     }
 
+    // Cancellation also kills any in-flight soft lock so the slot frees
+    // immediately for other users.
     await appointmentModel.findByIdAndUpdate(appointmentId, {
       cancelled: true,
+      lockExpiresAt: null,
     });
-
-    const { docId, slotDate, slotTime } = appointmentData;
-
-    const doctorData = await doctorModel.findById(docId);
-
-    const slots_booked = doctorData.slots_booked;
-    slots_booked[slotDate] = slots_booked[slotDate].filter(
-      (e) => e !== slotTime
-    );
-
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
     res.json({ success: true, message: "Appointment Cancelled Successfully!" });
   } catch (error) {
@@ -410,7 +417,8 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-// api to make payment
+// api to make payment — opens a Stripe Checkout session and refreshes the
+// appointment's soft lock so the slot stays held for the full payment window.
 const makePayment = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -425,6 +433,10 @@ const makePayment = async (req, res) => {
       return res.json({ success: false, message: "Unauthorized action" });
     }
 
+    if (appointment.cancelled) {
+      return res.json({ success: false, message: "Appointment was cancelled" });
+    }
+
     if (appointment.payment) {
       return res.json({ success: false, message: "Payment already completed" });
     }
@@ -434,7 +446,15 @@ const makePayment = async (req, res) => {
       return res.json({ success: false, message: "Payment service configuration error" });
     }
 
+    const newLock = new Date(Date.now() + PAYMENT_LOCK_MS);
+    await appointmentModel.findByIdAndUpdate(appointmentId, { lockExpiresAt: newLock });
+
     const stripe = new Stripe(process.env.STRIPE_SECRET);
+
+    // Stripe minimum session duration is 30 minutes; aligning with our lock
+    // means an abandoned checkout fires `checkout.session.expired` right
+    // around the same time the soft-lock would have lapsed anyway.
+    const expiresAt = Math.floor(newLock.getTime() / 1000);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -442,9 +462,7 @@ const makePayment = async (req, res) => {
         {
           price_data: {
             currency: "inr",
-            product_data: {
-              name: "Appointment Booking",
-            },
+            product_data: { name: "Appointment Booking" },
             unit_amount: appointment.amount * 100,
           },
           quantity: 1,
@@ -452,10 +470,9 @@ const makePayment = async (req, res) => {
       ],
       mode: "payment",
       success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/cancel`,
-      metadata: {
-        appointmentId: appointmentId,
-      },
+      cancel_url: `${process.env.FRONTEND_URL}/cancel?appointment_id=${appointmentId}`,
+      metadata: { appointmentId },
+      expires_at: expiresAt,
     });
 
     res.json({ success: true, sessionId: session.id });
@@ -465,21 +482,100 @@ const makePayment = async (req, res) => {
   }
 };
 
-//api to update the payment status of the appointment
-const updatePaymentStatus = async (req, res) => {
+// Called by Success.jsx after Stripe redirects back. Verifies the session
+// with Stripe (so a random user can't fake a success URL) and returns the
+// appointmentId so the page can show real confirmation. Does NOT flip
+// `payment` — that's the webhook's job.
+const verifyPayment = async (req, res) => {
   try {
-    const { appointmentId } = req.body;
+    const { session_id } = req.query;
+    if (!session_id) {
+      return res.json({ success: false, message: "Missing session_id" });
+    }
+    if (!process.env.STRIPE_SECRET) {
+      return res.json({ success: false, message: "Payment service configuration error" });
+    }
+    const stripe = new Stripe(process.env.STRIPE_SECRET);
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (session.payment_status !== 'paid') {
+      return res.json({ success: false, message: "Payment not completed" });
+    }
+    const appointmentId = session.metadata?.appointmentId;
+    res.json({ success: true, appointmentId, paymentStatus: session.payment_status });
+  } catch (error) {
+    console.error('verifyPayment error:', error);
+    res.json({ success: false, message: error.message });
+  }
+};
 
-    if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid appointmentId format" });
+// Called by Cancel.jsx when Stripe redirects to /cancel — we drop the soft
+// lock immediately so the slot reopens without waiting on Stripe's
+// `checkout.session.expired` webhook (which can fire up to 30 min later).
+const releaseLock = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { appointmentId } = req.body;
+    const appointment = await appointmentModel.findById(appointmentId);
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+    if (appointment.userId !== userId) {
+      return res.json({ success: false, message: "Unauthorized action" });
+    }
+    if (appointment.payment) {
+      return res.json({ success: false, message: "Payment already completed" });
+    }
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      cancelled: true,
+      lockExpiresAt: null,
+    });
+    res.json({ success: true, message: "Lock released" });
+  } catch (error) {
+    console.error('releaseLock error:', error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Stripe webhook — the ONLY path that flips `payment: true`. Mounted with
+// express.raw() so the signature check works (see app.js). The route is
+// unauthenticated by design; Stripe's signature is the auth.
+const stripeWebhook = async (req, res) => {
+  try {
+    if (!process.env.STRIPE_SECRET || !process.env.STRIPE_WEBHOOK_SECRET) {
+      console.error('Stripe webhook env not configured');
+      return res.status(500).send('Stripe not configured');
+    }
+    const stripe = new Stripe(process.env.STRIPE_SECRET);
+    const sig = req.headers['stripe-signature'];
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+      console.error('Stripe webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    await appointmentModel.findByIdAndUpdate(appointmentId, { payment: true });
-    res.json({ success: true, message: "Payment status updated successfully" });
+    if (event.type === 'checkout.session.completed') {
+      const appointmentId = event.data.object.metadata?.appointmentId;
+      if (appointmentId) {
+        await appointmentModel.findByIdAndUpdate(appointmentId, {
+          payment: true,
+          lockExpiresAt: null,
+        });
+      }
+    } else if (event.type === 'checkout.session.expired') {
+      const appointmentId = event.data.object.metadata?.appointmentId;
+      if (appointmentId) {
+        // Don't auto-cancel — user might have just walked away from the tab.
+        // Just expire the lock so the slot is reusable; row stays as a record.
+        await appointmentModel.findByIdAndUpdate(appointmentId, { lockExpiresAt: null });
+      }
+    }
+
+    res.json({ received: true });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('stripeWebhook error:', error);
+    res.status(500).send('Internal error');
   }
 };
 
@@ -735,7 +831,9 @@ export {
   allAppointments,
   cancelAppointment,
   makePayment,
-  updatePaymentStatus,
+  verifyPayment,
+  releaseLock,
+  stripeWebhook,
   forgotPassword,
   resetPassword,
   getAppointmentChatMessages,

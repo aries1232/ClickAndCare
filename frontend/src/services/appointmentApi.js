@@ -22,7 +22,20 @@ export const makePayment = async (token, { appointmentId }) => {
   return data;
 };
 
-export const updatePaymentStatus = async (token, { appointmentId }) => {
-  const { data } = await axios.post('/api/user/update-payment-status', { appointmentId }, authHeader(token));
+// Verifies the Stripe Checkout session server-side and returns the
+// appointmentId to display on the success page. Does NOT itself flip
+// `payment` — that's the webhook's job.
+export const verifyPayment = async (token, sessionId) => {
+  const { data } = await axios.get('/api/user/verify-payment', {
+    params: { session_id: sessionId },
+    ...authHeader(token),
+  });
+  return data;
+};
+
+// Called from the cancel page so the soft lock drops immediately instead
+// of waiting on Stripe's `checkout.session.expired` webhook.
+export const releaseLock = async (token, { appointmentId }) => {
+  const { data } = await axios.post('/api/user/release-lock', { appointmentId }, authHeader(token));
   return data;
 };
