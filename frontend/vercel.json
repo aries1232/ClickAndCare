@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://pjzyuwdvf8.execute-api.ap-south-1.amazonaws.com/api/:path*"
+    },
+    {
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
     }
   ]
 }
