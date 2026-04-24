@@ -48,9 +48,30 @@ functions:
       - httpApi: '*'
 
 package:
+  individually: false
+  excludeDevDependencies: true
   patterns:
+    # Default-deny most things, then allow code + production node_modules.
+    - '!**'
+    - 'lambda.js'
+    - 'app.js'
+    - 'package.json'
+    - 'config/**'
+    - 'controllers/**'
+    - 'middlewares/**'
+    - 'models/**'
+    - 'routes/**'
+    - 'socket/**'
+    - 'utils/**'
+    - 'node_modules/**'
+    # Now strip junk that crept into node_modules.
     - '!node_modules/.cache/**'
-    - '!.git/**'
-    - '!scripts/**'
-    - '!README.md'
-    - '!.env*'
+    - '!node_modules/**/test/**'
+    - '!node_modules/**/tests/**'
+    - '!node_modules/**/__tests__/**'
+    - '!node_modules/**/example/**'
+    - '!node_modules/**/examples/**'
+    - '!node_modules/**/docs/**'
+    - '!node_modules/**/*.md'
+    - '!node_modules/**/*.ts'
+    - '!node_modules/**/*.map'
