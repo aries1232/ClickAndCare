@@ -2,6 +2,10 @@ name: Build & Release — backend (AWS Lambda)
 
 # Manual-only. Start a run from the Actions tab when you want a new
 # backend build to hit Lambda.
+#
+# Env vars (MongoDB, JWT, Cloudinary, Stripe, SMTP, etc.) come from
+# Doppler at deploy time via `doppler run`. Only AWS credentials and the
+# Doppler service token live in GitHub secrets.
 on:
   workflow_dispatch:
     inputs:
@@ -31,22 +35,12 @@ jobs:
       run:
         working-directory: backend
     env:
-      # AWS
+      # AWS (used by serverless to deploy; NOT injected by Doppler)
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
-
-      # Runtime env vars (forwarded into Lambda via serverless.yml)
-      MONGODB_URI: ${{ secrets.MONGODB_URI }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      CLOUDINARY_NAME: ${{ secrets.CLOUDINARY_NAME }}
-      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-      CLOUDINARY_SECRET_KEY: ${{ secrets.CLOUDINARY_SECRET_KEY }}
-      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-      EMAIL_USER: ${{ secrets.EMAIL_USER }}
-      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-      FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
-      ADMIN_URL: ${{ secrets.ADMIN_URL }}
+      # Doppler service token scoped to clickandcare-backend / prd
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,5 +56,12 @@ jobs:
       - name: Install Serverless Framework
         run: npm i -g serverless@3
 
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
       - name: Build & Release (stage=${{ inputs.stage }})
-        run: serverless deploy --stage ${{ inputs.stage }} --verbose
+        # `doppler run --preserve-env` keeps AWS_* from the GH env intact while
+        # also injecting MONGODB_URI / JWT_SECRET / CLOUDINARY_* / STRIPE_* /
+        # EMAIL_* / FRONTEND_URL / ADMIN_URL from Doppler. Serverless then reads
+        # them via ${env:VAR} in serverless.yml and bakes them into the Lambda.
+        run: doppler run --preserve-env -- serverless deploy --stage ${{ inputs.stage }} --verbose

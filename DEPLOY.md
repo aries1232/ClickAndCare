@@ -78,22 +78,30 @@ Settings → Secrets and variables → Actions → **New repository secret**:
 | `VERCEL_PROJECT_ID_FRONTEND` | `projectId` of the frontend Vercel project |
 | `VERCEL_PROJECT_ID_ADMIN` | `projectId` of the admin Vercel project |
 
-### AWS / Serverless
+### AWS (GitHub secrets)
 | Secret | Value |
 |---|---|
 | `AWS_ACCESS_KEY_ID` | from IAM user |
 | `AWS_SECRET_ACCESS_KEY` | from IAM user |
 | `AWS_REGION` | e.g. `ap-south-1` (optional — defaults to ap-south-1) |
-| `MONGODB_URI` | your Mongo Atlas connection string (**no trailing `/dbname`** — the code appends `/Click&Care`) |
-| `JWT_SECRET` | strong random string |
-| `CLOUDINARY_NAME` | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | |
-| `CLOUDINARY_SECRET_KEY` | |
-| `STRIPE_SECRET_KEY` | `sk_live_…` or `sk_test_…` |
-| `EMAIL_USER` | SMTP sender |
-| `EMAIL_PASSWORD` | SMTP app password |
-| `FRONTEND_URL` | prod frontend URL (for CORS + Stripe return URLs) |
-| `ADMIN_URL` | prod admin URL (for CORS) |
+
+### Doppler (GitHub secret + Doppler project)
+Runtime env vars live in a Doppler project (`clickandcare-backend`, config `prd`). The workflow pulls them at deploy time, so they never touch GitHub.
+
+**GitHub secret:**
+| Secret | Value |
+|---|---|
+| `DOPPLER_TOKEN` | Doppler → `clickandcare-backend` → **Access → Service Tokens** → create one scoped to the `prd` config (read-only) |
+
+**Doppler `clickandcare-backend` / prd config should contain:**
+
+- `MONGODB_URI` (Mongo Atlas conn string, **no trailing `/dbname`** — code appends `/Click&Care`)
+- `JWT_SECRET` (long random string)
+- `CLOUDINARY_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_SECRET_KEY`
+- `STRIPE_SECRET_KEY` (`sk_live_…` or `sk_test_…`)
+- `EMAIL_USER`, `EMAIL_PASSWORD`
+- `FRONTEND_URL` (prod frontend, for CORS + Stripe return URLs)
+- `ADMIN_URL` (prod admin, for CORS)
 
 ---
 
