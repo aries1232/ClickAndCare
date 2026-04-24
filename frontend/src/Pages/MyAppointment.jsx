@@ -10,7 +10,7 @@ const MyAppointment = () => {
     chatOpen, chatAppointment, chatMessages, chatLoading,
     chatHasMoreOlder, chatLoadingOlder, loadOlderMessages,
     userData, socket,
-    handlePaynow, cancelAppointment, handleOpenChat, closeChat,
+    cancelAppointment, handleOpenChat, closeChat,
   } = useMyAppointments();
 
   return (
@@ -19,7 +19,6 @@ const MyAppointment = () => {
       <AppointmentList
         appointments={appointments}
         unreadCounts={unreadCounts}
-        onPay={handlePaynow}
         onCancel={cancelAppointment}
         onOpenChat={handleOpenChat}
       />

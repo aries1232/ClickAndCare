@@ -1,12 +1,10 @@
 import { useContext, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { loadStripe } from '@stripe/stripe-js';
 import { AppContext } from '../context/AppContext';
 import { useSocketContext } from '../context/SocketContext';
 import {
   getMyAppointments as getMyAppointmentsApi,
   cancelAppointment as cancelAppointmentApi,
-  makePayment as makePaymentApi,
 } from '../services/appointmentApi';
 import { getAppointmentChatMessages } from '../services/chatApi';
 import { useAppointmentUnreadCounts } from './useAppointmentUnreadCounts';
@@ -35,20 +33,6 @@ export const useMyAppointments = () => {
       }
     } catch (error) {
       toast.error(error.message);
-    }
-  };
-
-  const handlePaynow = async (appointmentId) => {
-    const stripe = await loadStripe(import.meta.env.VITE_STRIPE_KEY_ID);
-    try {
-      const data = await makePaymentApi(token, { appointmentId });
-      if (data.success) {
-        await stripe.redirectToCheckout({ sessionId: data.sessionId });
-      } else {
-        toast.error(data.message);
-      }
-    } catch {
-      toast.error('Payment initiation failed.');
     }
   };
 
@@ -127,7 +111,6 @@ export const useMyAppointments = () => {
     chatHasMoreOlder, chatLoadingOlder, loadOlderMessages,
     userData,
     socket,
-    handlePaynow,
     cancelAppointment,
     handleOpenChat,
     closeChat,
