@@ -2,7 +2,7 @@ import React from 'react';
 import AppointmentCard from './AppointmentCard.jsx';
 import EmptyAppointments from './EmptyAppointments.jsx';
 
-const AppointmentList = ({ appointments, unreadCounts, onPay, onCancel, onOpenChat, onExpire }) => {
+const AppointmentList = ({ appointments, unreadCounts, onPay, onCancel, onOpenChat }) => {
   if (appointments.length === 0) return <EmptyAppointments />;
   return (
     <div className="space-y-4">
@@ -14,7 +14,6 @@ const AppointmentList = ({ appointments, unreadCounts, onPay, onCancel, onOpenCh
           onPay={onPay}
           onCancel={onCancel}
           onOpenChat={onOpenChat}
-          onExpire={onExpire}
         />
       ))}
     </div>

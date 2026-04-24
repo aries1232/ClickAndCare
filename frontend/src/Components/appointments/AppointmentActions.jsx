@@ -1,5 +1,4 @@
 import React from 'react';
-import AppointmentTimer from '../AppointmentTimer.jsx';
 
 const ChatIcon = () => (
   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -16,7 +15,7 @@ const UnreadBadge = ({ count }) => {
   );
 };
 
-const AppointmentActions = ({ appointment, unreadCount, onPay, onCancel, onOpenChat, onExpire }) => {
+const AppointmentActions = ({ appointment, unreadCount, onPay, onCancel, onOpenChat }) => {
   if (!appointment.payment && !appointment.cancelled && !appointment.isCompleted) {
     return (
       <>
@@ -26,7 +25,6 @@ const AppointmentActions = ({ appointment, unreadCount, onPay, onCancel, onOpenC
         >
           Pay Now
         </button>
-        <AppointmentTimer appointmentDate={appointment.date} onExpire={onExpire} />
         <button
           className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
           onClick={() => onCancel(appointment._id)}

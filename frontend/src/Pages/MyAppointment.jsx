@@ -11,7 +11,6 @@ const MyAppointment = () => {
     chatHasMoreOlder, chatLoadingOlder, loadOlderMessages,
     userData, socket,
     handlePaynow, cancelAppointment, handleOpenChat, closeChat,
-    refreshAppointments,
   } = useMyAppointments();
 
   return (
@@ -23,7 +22,6 @@ const MyAppointment = () => {
         onPay={handlePaynow}
         onCancel={cancelAppointment}
         onOpenChat={handleOpenChat}
-        onExpire={refreshAppointments}
       />
       <ChatBox
         isOpen={chatOpen}
