@@ -16,7 +16,10 @@ provider:
     CLOUDINARY_NAME: ${env:CLOUDINARY_NAME}
     CLOUDINARY_API_KEY: ${env:CLOUDINARY_API_KEY}
     CLOUDINARY_SECRET_KEY: ${env:CLOUDINARY_SECRET_KEY}
-    STRIPE_SECRET: ${env:STRIPE_SECRET}
+    # Code reads process.env.STRIPE_SECRET; Doppler stores it as
+    # STRIPE_SECRET_KEY (legacy name). Map source → target here so we don't
+    # need to touch Doppler.
+    STRIPE_SECRET: ${env:STRIPE_SECRET_KEY}
     STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
     EMAIL_HOST: ${env:EMAIL_HOST, ''}
     EMAIL_PORT: ${env:EMAIL_PORT, ''}
