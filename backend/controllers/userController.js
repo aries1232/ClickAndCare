@@ -372,16 +372,18 @@ const bookAppointment = async (req, res) => {
 const allAppointments = async (req, res) => {
   try {
     const userId = req.user.id;
-    // Hide rows whose soft-lock has expired without payment — they're
-    // effectively abandoned. The row stays in the DB for audit.
-    const now = new Date();
+    // Booking is now a single redirect-to-Stripe gesture — there's no
+    // legitimate "unpaid pending" state for a user to look at. Show only
+    // paid / cancelled / completed rows. Soft-locked-but-unpaid rows are
+    // an in-flight checkout (user is on the Stripe page or abandoned the
+    // tab); they don't belong in the user-facing list.
     const data = await appointmentModel
       .find({
         userId,
         $or: [
           { payment: true },
           { cancelled: true },
-          { lockExpiresAt: { $gt: now } },
+          { isCompleted: true },
         ],
       })
       .sort({ date: -1 });

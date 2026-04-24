@@ -15,30 +15,10 @@ const UnreadBadge = ({ count }) => {
   );
 };
 
-const AppointmentActions = ({ appointment, unreadCount, onPay, onCancel, onOpenChat }) => {
-  if (!appointment.payment && !appointment.cancelled && !appointment.isCompleted) {
-    return (
-      <>
-        <button
-          onClick={() => onPay(appointment._id)}
-          className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300"
-        >
-          Pay Now
-        </button>
-        <button
-          className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
-          onClick={() => onCancel(appointment._id)}
-        >
-          Cancel Appointment
-        </button>
-      </>
-    );
-  }
-
+const AppointmentActions = ({ appointment, unreadCount, onCancel, onOpenChat }) => {
   if (appointment.payment && !appointment.isCompleted && !appointment.cancelled) {
     return (
       <>
-        <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">Payment Done !</button>
         <button
           className="relative inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl sm:min-w-48"
           onClick={() => onOpenChat(appointment)}
@@ -46,6 +26,12 @@ const AppointmentActions = ({ appointment, unreadCount, onPay, onCancel, onOpenC
           <ChatIcon />
           Chat
           <UnreadBadge count={unreadCount} />
+        </button>
+        <button
+          className="text-sm text-stone-400 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
+          onClick={() => onCancel(appointment._id)}
+        >
+          Cancel Appointment
         </button>
       </>
     );
