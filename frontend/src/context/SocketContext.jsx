@@ -41,13 +41,11 @@ export const SocketContextProvider = ({ children }) => {
       
       // Listen for new messages
       newSocket.on("receiveMessage", (message) => {
-        console.log('SocketContext: Received message:', message);
-        // Dispatch custom event for components to handle
         window.dispatchEvent(new CustomEvent('newMessage', {
           detail: {
             appointmentId: message.appointmentId,
-            message: message
-          }
+            message,
+          },
         }));
       });
       
