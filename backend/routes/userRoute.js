@@ -10,7 +10,8 @@ import {
   allAppointments,
   cancelAppointment,
   makePayment,
-  updatePaymentStatus,
+  verifyPayment,
+  releaseLock,
   forgotPassword,
   resetPassword,
   getAppointmentChatMessages,
@@ -42,7 +43,8 @@ userRouter.post('/book-appointment', authUser, bookAppointment)
 userRouter.get('/appointments', authUser, allAppointments)
 userRouter.post('/cancel-appointment', authUser, cancelAppointment)
 userRouter.post('/make-payment', authUser, makePayment)
-userRouter.post('/update-payment-status', authUser, updatePaymentStatus)
+userRouter.get('/verify-payment', authUser, verifyPayment)
+userRouter.post('/release-lock', authUser, releaseLock)
 
 // Chat
 userRouter.get('/appointment/:appointmentId/chat-messages', authUser, getAppointmentChatMessages)

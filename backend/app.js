@@ -11,6 +11,7 @@ import doctorRouter from './routes/doctorRoute.js';
 import chatRouter from './routes/chatRoute.js';
 import debugRouter from './routes/debugRoute.js';
 import { notFound, errorHandler } from './middlewares/errorHandler.js';
+import { stripeWebhook } from './controllers/userController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,6 +21,12 @@ const isProd = process.env.NODE_ENV === 'production';
 const app = express();
 
 app.use(compression());
+
+// Stripe webhook MUST be mounted before express.json() — Stripe's signature
+// verification needs the raw request body (express.json() would already have
+// parsed it into a JS object).
+app.post('/api/user/stripe-webhook', express.raw({ type: 'application/json' }), stripeWebhook);
+
 app.use(express.json());
 app.use(cors(corsOptions));
 

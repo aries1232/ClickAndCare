@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getBookedSlots } from '../services/doctorApi';
 
 const DAYS = 7;
 const DAY_START_HOUR = 10;
@@ -11,6 +12,23 @@ export const useSlotGeneration = (docInfo) => {
   const [docSlot, setDocSlot] = useState([]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState('');
+  // Live booked slots from the backend (replaces the old doctor.slots_booked
+  // denormalized map). Includes confirmed payments AND active soft locks.
+  const [bookedSlots, setBookedSlots] = useState({});
+
+  useEffect(() => {
+    if (!docInfo?._id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getBookedSlots(docInfo._id);
+        if (!cancelled && data.success) setBookedSlots(data.bookedSlots || {});
+      } catch {
+        if (!cancelled) setBookedSlots({});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [docInfo?._id]);
 
   useEffect(() => {
     if (!docInfo) return;
@@ -46,7 +64,7 @@ export const useSlotGeneration = (docInfo) => {
       while (currentDate < endTime) {
         const formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const slotDate = `${currentDate.getDate()}_${currentDate.getMonth() + 1}_${currentDate.getFullYear()}`;
-        const isBooked = docInfo.slots_booked?.[slotDate]?.includes(formattedTime);
+        const isBooked = bookedSlots?.[slotDate]?.includes(formattedTime);
         if (!isBooked) {
           timeSlots.push({ dateTime: new Date(currentDate), time: formattedTime });
         }
@@ -57,7 +75,7 @@ export const useSlotGeneration = (docInfo) => {
     }
 
     setDocSlot(weekSlots);
-  }, [docInfo]);
+  }, [docInfo, bookedSlots]);
 
   return { docSlot, slotIndex, setSlotIndex, slotTime, setSlotTime };
 };

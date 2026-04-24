@@ -1,5 +1,5 @@
 import express from 'express'; 
-import { appointmentsDoctor, getDoctors, loginDoctor, appointmentCancel,appointmentComplete, doctorDashboard,doctorProfile,updateDoctorProfile, signupDoctor, updateProfilePicture, sendSignupOTP, verifySignupOTP, getAppointmentChatMessages, getUnreadCounts} from '../controllers/doctorController.js';
+import { appointmentsDoctor, getDoctors, loginDoctor, appointmentCancel,appointmentComplete, doctorDashboard,doctorProfile,updateDoctorProfile, signupDoctor, updateProfilePicture, sendSignupOTP, verifySignupOTP, getAppointmentChatMessages, getUnreadCounts, getBookedSlots} from '../controllers/doctorController.js';
 import authDoctor from '../middlewares/authDoctor.js';
 import upload from '../middlewares/multer.js';
 import { validate } from '../middlewares/validate.js';
@@ -12,6 +12,7 @@ doctorRouter.post('/verify-signup-otp', validate({ email: 'email', otp: 'otp' })
 
 doctorRouter.post('/signup', upload.single('image'), signupDoctor);
 doctorRouter.post('/get-doctors', getDoctors);
+doctorRouter.get('/booked-slots/:docId', getBookedSlots);
 doctorRouter.post('/login', validate({ email: 'email', password: 'nonEmpty' }), loginDoctor);
 doctorRouter.get('/appointments',authDoctor,appointmentsDoctor);
 doctorRouter.post('/complete-appointment', authDoctor,appointmentComplete)

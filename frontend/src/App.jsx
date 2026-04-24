@@ -58,7 +58,7 @@ const App = () => {
             <Route path="/verify-otp" element={<OTPVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/success/:appointmentId" element={<Success />} />
+            <Route path="/success" element={<Success />} />
             <Route path="/cancel" element={<Cancel />} />
           </Routes>
         </div>

@@ -350,21 +350,12 @@ const appointmentCancel =async(req,res)=>{
   
       const { appointmentId} = req.body;
       const appointmentData = await appointmentModel.findById(appointmentId);
-  
-      
-  
-      await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true})
-  
+
+      await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true, lockExpiresAt:null})
+
       const {docId,slotDate,slotTime}=appointmentData;
-  
-      const doctorData= await doctorModel.findById(docId);
-  
-      const slots_booked=doctorData.slots_booked;
-      slots_booked[slotDate]=slots_booked[slotDate].filter(e=>e!==slotTime);
-  
-  
-      await doctorModel.findByIdAndUpdate(docId,{slots_booked});
-  
+      const doctorData = await doctorModel.findById(docId);
+
       // Log the appointment cancellation
       await logAdminAction(
           'CANCEL_APPOINTMENT',
