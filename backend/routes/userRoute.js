@@ -17,7 +17,9 @@ import {
   getAppointmentChatMessages,
   getUnreadCounts,
   resetAllUnreadCounts,
-  googleLogin
+  googleLogin,
+  requestAppointmentReceipt,
+  getAppointmentReceiptStatus
 } from '../controllers/userController.js'
 import authUser from '../middlewares/authUser.js'
 import upload from '../middlewares/multer.js'
@@ -45,6 +47,10 @@ userRouter.post('/cancel-appointment', authUser, cancelAppointment)
 userRouter.post('/make-payment', authUser, makePayment)
 userRouter.get('/verify-payment', authUser, verifyPayment)
 userRouter.post('/release-lock', authUser, releaseLock)
+
+// Receipts (proxied to fileweaver)
+userRouter.post('/appointments/:appointmentId/receipt', authUser, requestAppointmentReceipt)
+userRouter.get('/appointments/:appointmentId/receipt/status', authUser, getAppointmentReceiptStatus)
 
 // Chat
 userRouter.get('/appointment/:appointmentId/chat-messages', authUser, getAppointmentChatMessages)

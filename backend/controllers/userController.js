@@ -16,6 +16,7 @@ import {
 import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 import { getPaginatedMessages } from '../utils/chatPagination.js';
+import { submitReport, getReportJob } from '../utils/fileweaverClient.js';
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -581,6 +582,85 @@ const stripeWebhook = async (req, res) => {
   }
 };
 
+// Kick off (or short-circuit) a paid-appointment receipt generation. Returns
+// either a jobId to poll OR a ready-to-download URL if fileweaver's
+// idempotency layer already has the file. Only the appointment owner can
+// generate; can only generate for paid appointments.
+const requestAppointmentReceipt = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { appointmentId } = req.params;
+    const appt = await appointmentModel.findById(appointmentId);
+    if (!appt) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    if (appt.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Not your appointment' });
+    }
+    if (!appt.payment) {
+      return res.status(409).json({ success: false, message: 'Receipt available only after payment' });
+    }
+
+    let data = await submitReport({
+      type: 'APPOINTMENT_RECEIPT',
+      format: 'PDF',
+      payload: { appointmentId: String(appt._id) },
+    });
+
+    // If fileweaver's idempotency layer returned a previously-failed job,
+    // bypass the cache and force a fresh attempt so the user isn't stuck
+    // on a stale error.
+    if (data.status === 'FAILED') {
+      data = await submitReport({
+        type: 'APPOINTMENT_RECEIPT',
+        format: 'PDF',
+        forceRegenerate: true,
+        payload: { appointmentId: String(appt._id) },
+      });
+    }
+
+    if (data.status === 'COMPLETED' && data.downloadUrl) {
+      return res.json({ success: true, ready: true, downloadUrl: data.downloadUrl, jobId: data.jobId });
+    }
+    res.json({ success: true, ready: false, jobId: data.jobId, status: data.status });
+  } catch (error) {
+    console.error('requestAppointmentReceipt error:', error);
+    res.status(error.status || 500).json({ success: false, message: error.message });
+  }
+};
+
+// Polled by the frontend every few seconds while the receipt is generating.
+// Authorizes the owner, then forwards to fileweaver's GET /reports/{id}.
+const getAppointmentReceiptStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { appointmentId } = req.params;
+    const { jobId } = req.query;
+    if (!jobId) {
+      return res.status(400).json({ success: false, message: 'jobId is required' });
+    }
+    const appt = await appointmentModel.findById(appointmentId);
+    if (!appt) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    if (appt.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Not your appointment' });
+    }
+
+    const job = await getReportJob(jobId);
+    if (job.status === 'COMPLETED' && job.downloadUrl) {
+      return res.json({ success: true, ready: true, downloadUrl: job.downloadUrl, status: job.status });
+    }
+    if (job.status === 'FAILED') {
+      return res.json({ success: true, ready: false, status: 'FAILED', error: job.error });
+    }
+    res.json({ success: true, ready: false, status: job.status });
+  } catch (error) {
+    console.error('getAppointmentReceiptStatus error:', error);
+    res.status(error.status || 500).json({ success: false, message: error.message });
+  }
+};
+
 // API to send forgot password OTP
 const forgotPassword = async (req, res) => {
   try {
@@ -842,4 +922,6 @@ export {
   getUnreadCounts,
   resetAllUnreadCounts,
   googleLogin,
+  requestAppointmentReceipt,
+  getAppointmentReceiptStatus,
 };
