@@ -1,31 +1,35 @@
 import React from 'react';
+import { HiOutlineMail, HiOutlinePhone, HiOutlineLocationMarker, HiOutlineBadgeCheck } from 'react-icons/hi';
 import ProfileField from './ProfileField.jsx';
 import { isDigitsOnly } from '../../utils/validators';
 
 const sharedInputClass =
-  'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
+  'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors';
 
 const VerifiedBadge = () => (
-  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-    </svg>
+  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold rounded-full">
+    <HiOutlineBadgeCheck className="w-3.5 h-3.5" />
     Verified
   </span>
 );
 
 const ContactInfoSection = ({ userData, setUserData, isEdit }) => (
   <div className="space-y-4">
-    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h3>
+    <div className="flex items-center gap-3 mb-2">
+      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+        <HiOutlineMail className="w-5 h-5" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
+    </div>
 
-    <ProfileField label="Email Address">
-      <div className="flex items-center gap-3">
-        <p className="text-gray-900 dark:text-white font-medium">{userData.email}</p>
+    <ProfileField label="Email Address" icon={HiOutlineMail}>
+      <div className="flex items-center gap-3 flex-wrap">
+        <p className="text-gray-900 dark:text-white font-medium break-all">{userData.email}</p>
         <VerifiedBadge />
       </div>
     </ProfileField>
 
-    <ProfileField label="Phone Number">
+    <ProfileField label="Phone Number" icon={HiOutlinePhone}>
       {isEdit ? (
         <input
           className={sharedInputClass}
@@ -39,7 +43,7 @@ const ContactInfoSection = ({ userData, setUserData, isEdit }) => (
       )}
     </ProfileField>
 
-    <ProfileField label="Address">
+    <ProfileField label="Address" icon={HiOutlineLocationMarker}>
       {isEdit ? (
         <div className="space-y-2">
           <input
@@ -60,7 +64,7 @@ const ContactInfoSection = ({ userData, setUserData, isEdit }) => (
       ) : (
         <div className="text-gray-900 dark:text-white">
           <p className="font-medium">{userData.address.line1 || 'Not provided'}</p>
-          {userData.address.line2 && <p className="text-gray-600 dark:text-gray-300">{userData.address.line2}</p>}
+          {userData.address.line2 && <p className="text-gray-600 dark:text-gray-400 text-sm">{userData.address.line2}</p>}
         </div>
       )}
     </ProfileField>

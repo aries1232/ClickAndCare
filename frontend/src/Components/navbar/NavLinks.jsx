@@ -2,21 +2,41 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const LINKS = [
-  { to: '/', label: 'HOME' },
-  { to: '/doctors', label: 'All DOCTORS' },
-  { to: '/about', label: 'ABOUT' },
-  { to: 'contact', label: 'Contact us' },
+  { to: '/', label: 'Home', end: true },
+  { to: '/doctors', label: 'Doctors' },
+  { to: '/about', label: 'About' },
+  { to: '/contact', label: 'Contact' },
 ];
 
 const NavLinks = () => (
-  <ul className="hidden md:flex items-start gap-5 font-medium text-gray-600 dark:text-white">
-    {LINKS.map(({ to, label }) => (
-      <NavLink key={to} to={to} className="text-gray-600 dark:text-white hover:text-primary dark:hover:text-primary transition-colors duration-200">
-        <li className="py-1">{label}</li>
-        <hr className="border-none outline-none h-0.5 bg-primary w-4/5 m-auto hidden" />
+  <nav className="hidden md:flex items-center gap-1">
+    {LINKS.map(({ to, label, end }) => (
+      <NavLink
+        key={to}
+        to={to}
+        end={end}
+        className={({ isActive }) =>
+          `relative px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+            isActive
+              ? 'text-primary'
+              : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+          }`
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <span>{label}</span>
+            <span
+              className={`absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-primary transition-all duration-200 ${
+                isActive ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+              }`}
+              aria-hidden="true"
+            />
+          </>
+        )}
       </NavLink>
     ))}
-  </ul>
+  </nav>
 );
 
 export default NavLinks;

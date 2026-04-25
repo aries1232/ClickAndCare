@@ -1,11 +1,37 @@
 import React from 'react';
+import { toast } from 'react-toastify';
+import {
+  HiOutlineCamera,
+  HiOutlinePencil,
+  HiOutlineCheck,
+  HiOutlineX,
+  HiOutlineLogout,
+} from 'react-icons/hi';
 import DefaultAvatar from '../DefaultAvatar.jsx';
 import ProfileImage from '../ProfileImage.jsx';
 
+const MAX_IMAGE_BYTES = 500 * 1024; // 500 KB — must match backend multer limit
+
+const handlePick = (e, setImage) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    toast.error('Please select an image file (JPG, PNG, etc.)');
+    return;
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    const kb = Math.round(file.size / 1024);
+    toast.error(`Image is too large (${kb} KB). Max size is 500 KB.`);
+    return;
+  }
+  setImage(file);
+};
+
 const EditPicker = ({ image, userData, setImage }) => (
-  <label className="cursor-pointer">
+  <label className="cursor-pointer group">
     <div className="relative">
-      <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white overflow-hidden">
+      <div className="w-28 h-28 md:w-36 md:h-36 rounded-full ring-4 ring-white/40 shadow-2xl overflow-hidden bg-white">
         {image ? (
           <img className="w-full h-full object-cover" src={URL.createObjectURL(image)} alt="Profile" />
         ) : userData?.image ? (
@@ -19,38 +45,46 @@ const EditPicker = ({ image, userData, setImage }) => (
           <DefaultAvatar name={userData?.name} size="w-full h-full" />
         )}
       </div>
-      <div className="absolute inset-0 bg-black/20 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
+      <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white">
+        <HiOutlineCamera className="w-7 h-7" />
+        <span className="text-xs font-medium mt-1">Change</span>
       </div>
     </div>
-    <input onChange={(e) => setImage(e.target.files[0])} type="file" accept="image/*" className="hidden" />
+    <input onChange={(e) => handlePick(e, setImage)} type="file" accept="image/*" className="hidden" />
   </label>
 );
 
 const ActionButtons = ({ isEdit, isSaving, onSave, onCancel, onStartEdit, onLogout }) => {
+  const baseSolid =
+    'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm shadow-md hover:shadow-lg active:scale-[0.98] transition-all duration-200';
+  const baseGhost =
+    'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200';
+
   if (isEdit) {
     return (
       <>
         <button
           onClick={onSave}
           disabled={isSaving}
-          className="bg-white text-primary px-4 py-2 rounded-full font-medium hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className={`${baseSolid} bg-white !text-primary dark:!text-primary disabled:opacity-60 disabled:cursor-not-allowed hover:bg-gray-50`}
         >
           {isSaving ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
-              Saving...
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+              Saving…
             </>
           ) : (
             <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              <HiOutlineCheck className="w-5 h-5" />
               Save Changes
             </>
           )}
         </button>
-        <button onClick={onCancel} className="bg-white/20 text-white px-4 py-2 rounded-full font-medium hover:bg-white/30 transition-colors duration-200">
+        <button
+          onClick={onCancel}
+          className={`${baseGhost} bg-white/15 !text-white ring-1 ring-white/30 hover:bg-white/25`}
+        >
+          <HiOutlineX className="w-5 h-5" />
           Cancel
         </button>
       </>
@@ -58,48 +92,71 @@ const ActionButtons = ({ isEdit, isSaving, onSave, onCancel, onStartEdit, onLogo
   }
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      <button onClick={onStartEdit} className="bg-white text-primary px-4 py-2 rounded-full font-medium hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+    <>
+      <button
+        onClick={onStartEdit}
+        className={`${baseSolid} bg-white !text-primary dark:!text-primary hover:bg-gray-50`}
+      >
+        <HiOutlinePencil className="w-4 h-4" />
         Edit Profile
       </button>
-      <button onClick={onLogout} className="bg-red-50 text-red-600 px-4 py-2 rounded-full font-medium hover:bg-red-100 transition-colors duration-200 flex items-center gap-2">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+      <button
+        onClick={onLogout}
+        className={`${baseGhost} bg-white/15 !text-white ring-1 ring-white/30 hover:bg-red-500/30 hover:ring-red-200`}
+      >
+        <HiOutlineLogout className="w-5 h-5" />
         Logout
       </button>
-    </div>
+    </>
   );
 };
 
 const ProfileHeader = ({ userData, setUserData, isEdit, image, setImage, isSaving, onSave, onCancel, onStartEdit, onLogout }) => (
-  <div className="bg-primary px-6 py-8 text-white">
-    <div className="flex flex-col md:flex-row items-center gap-6">
+  <div className="relative overflow-hidden bg-gradient-to-br from-primary via-emerald-500 to-teal-600 px-6 sm:px-8 py-10 md:py-12 text-white">
+    {/* Decorative blobs */}
+    <div className="absolute -top-20 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+    <div className="absolute -bottom-24 -left-10 w-72 h-72 bg-emerald-200/20 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+
+    <div className="relative flex flex-col md:flex-row items-center gap-6 md:gap-8">
       <div className="relative">
         {isEdit ? (
           <EditPicker image={image} userData={userData} setImage={setImage} />
         ) : (
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white overflow-hidden">
-            <ProfileImage user={userData} size="w-24 h-24 md:w-32 md:h-32" />
+          <div className="relative">
+            <div className="w-28 h-28 md:w-36 md:h-36 rounded-full ring-4 ring-white/40 shadow-2xl overflow-hidden bg-white">
+              <ProfileImage user={userData} size="w-28 h-28 md:w-36 md:h-36" />
+            </div>
+            <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-400 ring-4 ring-white" />
           </div>
         )}
       </div>
 
-      <div className="flex-1 text-center md:text-left">
+      <div className="flex-1 text-center md:text-left w-full">
+        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-white/80 mb-2">
+          Patient Account
+        </p>
         {isEdit ? (
           <input
-            className="bg-white/20 text-2xl md:text-3xl font-bold text-white placeholder-white/80 border-0 rounded px-3 py-2 w-full max-w-md focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="bg-white/15 backdrop-blur-sm text-2xl md:text-3xl font-bold text-white placeholder-white/70 ring-1 ring-white/30 rounded-lg px-4 py-2 w-full max-w-md focus:outline-none focus:ring-2 focus:ring-white/60"
             type="text"
             value={userData.name}
             onChange={(e) => setUserData((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Enter your name"
           />
         ) : (
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{userData.name}</h2>
+          <h2 className="text-2xl md:text-4xl font-bold tracking-tight">{userData.name}</h2>
         )}
-        <p className="text-white/90 text-lg mb-4">Patient Account</p>
+        <p className="mt-2 text-sm text-white/80">{userData.email}</p>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <ActionButtons isEdit={isEdit} isSaving={isSaving} onSave={onSave} onCancel={onCancel} onStartEdit={onStartEdit} onLogout={onLogout} />
+        <div className="mt-5 flex flex-col sm:flex-row gap-3 items-center md:items-start justify-center md:justify-start">
+          <ActionButtons
+            isEdit={isEdit}
+            isSaving={isSaving}
+            onSave={onSave}
+            onCancel={onCancel}
+            onStartEdit={onStartEdit}
+            onLogout={onLogout}
+          />
         </div>
       </div>
     </div>

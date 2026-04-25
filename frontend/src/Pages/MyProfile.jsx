@@ -24,13 +24,18 @@ const MyProfile = () => {
   const userData = withDefaults(editor.userData);
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Profile</h1>
-        <p className="text-gray-600 dark:text-gray-300">Manage your personal information and account settings</p>
+    <div className="pb-16">
+      <div className="mb-6 mt-2">
+        <p className="inline-block text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
+          Account
+        </p>
+        <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Manage your personal information and account settings.
+        </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
         <ProfileHeader
           userData={userData}
           setUserData={editor.setUserData}
@@ -44,8 +49,8 @@ const MyProfile = () => {
           onLogout={editor.handleLogout}
         />
 
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="p-6 sm:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
             <ContactInfoSection userData={userData} setUserData={editor.setUserData} isEdit={editor.isEdit} />
             <PersonalInfoSection userData={userData} setUserData={editor.setUserData} isEdit={editor.isEdit} />
           </div>

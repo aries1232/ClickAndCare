@@ -39,9 +39,11 @@ const SlotPicker = ({ docSlot, slotIndex, setSlotIndex, slotTime, setSlotTime, i
     <button
       onClick={onBook}
       disabled={isBooking}
-      className={`text-sm font-light px-14 py-3 rounded-full mt-5 flex items-center justify-center gap-2 ${
-        isBooking ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'
-      } text-white`}
+      className={`text-sm font-semibold px-14 py-3 rounded-full mt-5 flex items-center justify-center gap-2 shadow-md shadow-primary/30 transition-all duration-200 ${
+        isBooking
+          ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+          : 'bg-primary hover:bg-emerald-500 active:scale-[0.98] !text-white dark:!text-white'
+      }`}
     >
       {isBooking ? (<><LoadingSpinner size="w-4 h-4" />Booking Appointment...</>) : 'Book an Appointment'}
     </button>

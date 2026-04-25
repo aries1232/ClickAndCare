@@ -18,31 +18,33 @@ const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, loadi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-gradient-to-br from-blue-50/80 via-white/90 to-purple-100/80 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col h-[80vh] min-h-[400px] relative border border-white/30 backdrop-blur-lg">
-        {chat.showScrollButton && <ScrollToBottomButton onClick={chat.scrollToBottom} />}
+    <div
+      className="fixed z-50 inset-0 sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[380px] sm:h-[600px] sm:max-h-[calc(100vh-2rem)] flex flex-col bg-white dark:bg-gray-800 sm:rounded-2xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden animate-chatbox-slide-in"
+      role="dialog"
+      aria-label="Appointment chat"
+    >
+      {chat.showScrollButton && <ScrollToBottomButton onClick={chat.scrollToBottom} />}
 
-        <ChatHeader user={user} doctor={doctor} onClose={onClose} />
+      <ChatHeader user={user} doctor={doctor} onClose={onClose} />
 
-        <MessageList
-          ref={chat.messagesContainerRef}
-          messages={chat.liveMessages}
-          loading={loading}
-          isOwn={chat.isOwn}
-          endRef={chat.messagesEndRef}
-          hasMoreOlder={hasMoreOlder}
-          loadingOlder={loadingOlder}
-          onLoadOlder={onLoadOlder}
-        />
+      <MessageList
+        ref={chat.messagesContainerRef}
+        messages={chat.liveMessages}
+        loading={loading}
+        isOwn={chat.isOwn}
+        endRef={chat.messagesEndRef}
+        hasMoreOlder={hasMoreOlder}
+        loadingOlder={loadingOlder}
+        onLoadOlder={onLoadOlder}
+      />
 
-        <ChatComposer
-          uploading={upload.uploading}
-          fileInputRef={upload.fileInputRef}
-          onFileSelect={upload.handleFileSelect}
-          onOpenPicker={upload.openPicker}
-          onSendText={chat.sendText}
-        />
-      </div>
+      <ChatComposer
+        uploading={upload.uploading}
+        fileInputRef={upload.fileInputRef}
+        onFileSelect={upload.handleFileSelect}
+        onOpenPicker={upload.openPicker}
+        onSendText={chat.sendText}
+      />
     </div>
   );
 };

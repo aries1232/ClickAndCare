@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaImage } from 'react-icons/fa';
+import { HiOutlinePhotograph, HiOutlinePaperAirplane } from 'react-icons/hi';
 
 const ChatComposer = ({ uploading, fileInputRef, onFileSelect, onOpenPicker, onSendText }) => {
   const [input, setInput] = useState('');
@@ -11,34 +11,48 @@ const ChatComposer = ({ uploading, fileInputRef, onFileSelect, onOpenPicker, onS
     setInput('');
   };
 
+  const canSend = input.trim().length > 0;
+
   return (
     <form
-      className="flex items-center gap-2 p-4 border-t border-white/20 bg-white/30 dark:bg-gray-900/60 rounded-b-2xl backdrop-blur-md"
+      className="flex items-center gap-2 px-3 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
       onSubmit={handleSubmit}
     >
       <button
         type="button"
         onClick={onOpenPicker}
         disabled={uploading}
-        className="px-3 py-2 bg-gray-200/80 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-700 dark:text-white hover:bg-gray-300/80 dark:hover:bg-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-gray-500 hover:text-primary hover:bg-gray-100 dark:text-gray-400 dark:hover:text-primary dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Attach image"
       >
-        {uploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700 dark:border-white"></div> : <FaImage className="text-base lg:text-lg" />}
+        {uploading ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-primary" />
+        ) : (
+          <HiOutlinePhotograph className="w-5 h-5" />
+        )}
       </button>
 
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileSelect} />
 
       <input
         type="text"
-        className="flex-1 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 shadow"
-        placeholder="Type your message..."
+        className="flex-1 px-4 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 text-sm transition-colors"
+        placeholder="Type a message…"
         value={input}
         onChange={(e) => setInput(e.target.value)}
       />
+
       <button
         type="submit"
-        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-semibold shadow hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
+        disabled={!canSend}
+        className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${
+          canSend
+            ? 'bg-primary !text-white shadow-md shadow-primary/30 hover:bg-emerald-500 active:scale-95'
+            : 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+        }`}
+        aria-label="Send message"
       >
-        Send
+        <HiOutlinePaperAirplane className="w-5 h-5 -rotate-45" />
       </button>
     </form>
   );
