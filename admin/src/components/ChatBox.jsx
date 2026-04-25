@@ -1,408 +1,176 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
+import { FaImage } from 'react-icons/fa';
 import MessageSkeleton from './MessageSkeleton';
 import { useSocketContext } from '../context/SocketContext.jsx';
-import { FaImage } from 'react-icons/fa';
-import axios from 'axios';
+import { useChatSocket } from '../hooks/useChatSocket';
+import { useChatImageUpload } from '../hooks/useChatImageUpload';
 
-// Sockets go to the always-on VITE_SOCKET_URL in prod; REST falls back to a
-// relative URL which Vercel proxies to Lambda. Dev uses the Vite proxy.
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
-  || import.meta.env.VITE_BACKEND_URL
-  || (import.meta.env.DEV ? 'http://localhost:3000' : '');
-
-function formatDate(dateStr) {
+const formatDate = (dateStr) => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return '';
-  
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  
-  if (date.toDateString() === today.toDateString()) {
-    return 'Today';
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return 'Yesterday';
-  } else {
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-}
+  if (date.toDateString() === today.toDateString()) return 'Today';
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+};
 
-function isDifferentDay(date1, date2) {
-  if (!date1 || !date2) return false;
-  const d1 = new Date(date1);
-  const d2 = new Date(date2);
+const isDifferentDay = (a, b) => {
+  if (!a || !b) return false;
+  const d1 = new Date(a);
+  const d2 = new Date(b);
   if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
   return d1.toDateString() !== d2.toDateString();
-}
+};
 
-function formatTime(dateStr) {
+const formatTime = (dateStr) => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return '';
-  
   const now = new Date();
-  const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-  
-  if (diffInMinutes < 1) {
-    return 'Just now';
-  } else if (diffInMinutes < 60) {
-    return `${diffInMinutes}m ago`;
-  } else if (diffInMinutes < 1440) { // Less than 24 hours
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    return `${diffInHours}h ago`;
-  } else {
-    // For messages older than 24 hours, show the actual time
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const diffMin = Math.floor((now - date) / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h ago`;
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+const MessageStatus = ({ status, fromMe }) => {
+  if (!fromMe) return null;
+  const tickClass = status === 'read' ? 'text-blue-300' : 'text-white';
+  if (status === 'sent') {
+    return (
+      <svg className={`w-3.5 h-3.5 ${tickClass}`} fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+    );
   }
-}
+  return (
+    <span className="flex">
+      <svg className={`w-3.5 h-3.5 ${tickClass}`} fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+      <svg className={`w-3.5 h-3.5 ${tickClass} -ml-1.5`} fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+    </span>
+  );
+};
 
-const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, onSendMessage, loading }) => {
+const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, loading }) => {
+  const { socket, onlineUsers } = useSocketContext() || {};
+
+  const chat = useChatSocket({ isOpen, appointmentId, socket, user, initialMessages: messages });
+  const upload = useChatImageUpload({
+    onUploaded: ({ fileUrl, fileName, fileSize }) => chat.sendImage({ fileUrl, fileName, fileSize }),
+  });
+
   const [input, setInput] = useState('');
-  const [liveMessages, setLiveMessages] = useState(messages || []);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [showImageMenu, setShowImageMenu] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(false);
-  const [pendingMessages, setPendingMessages] = useState(new Set());
-  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
-  const messagesEndRef = useRef(null);
-  const messagesContainerRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const { socket } = useSocketContext();
-
-  // Reset messages when appointment changes
-  useEffect(() => {
-    setLiveMessages(messages || []);
-  }, [messages, appointmentId]);
-
-  // Join appointment room and listen for messages
-  useEffect(() => {
-    if (!isOpen || !appointmentId || !socket) return;
-    socket.emit('joinAppointmentRoom', appointmentId);
-    const handleReceive = (msg) => {
-      setLiveMessages(prev => [...prev, msg]);
-      
-      // Mark message as delivered if it's not from the current user
-      if (msg.sender !== user?._id && msg.sender !== user?.id) {
-        socket.emit('markMessageAsDelivered', { messageId: msg._id, appointmentId });
-      }
-      
-      // Auto-scroll to bottom only if user is already at the bottom
-      const container = messagesContainerRef.current;
-      if (container) {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-        
-        if (isAtBottom) {
-          // User is at bottom, auto-scroll to show new message
-          setIsAutoScrolling(true);
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            // Reset auto-scroll flag after animation completes
-            setTimeout(() => {
-              setIsAutoScrolling(false);
-            }, 500);
-          }, 100);
-        }
-        // If user is not at bottom, don't auto-scroll (they're reading older messages)
-      }
-    };
-
-    // Handle message delivered status
-    const handleMessageDelivered = (data) => {
-      setLiveMessages(prev => prev.map(msg => 
-        msg._id === data.messageId 
-          ? { ...msg, status: 'delivered', deliveredAt: data.deliveredAt }
-          : msg
-      ));
-    };
-
-    // Handle message read status
-    const handleMessageRead = (data) => {
-      setLiveMessages(prev => prev.map(msg => 
-        msg._id === data.messageId 
-          ? { ...msg, status: 'read', readAt: data.readAt }
-          : msg
-      ));
-    };
-
-    // Handle multiple messages read status
-    const handleMessagesRead = (data) => {
-      setLiveMessages(prev => prev.map(msg => 
-        data.messageIds.includes(msg._id)
-          ? { ...msg, status: 'read', readAt: data.readAt }
-          : msg
-      ));
-    };
-
-    socket.on('receiveMessage', handleReceive);
-    socket.on('messageDelivered', handleMessageDelivered);
-    socket.on('messageRead', handleMessageRead);
-    socket.on('messagesRead', handleMessagesRead);
-    socket.on('unreadCountUpdate', (data) => {
-      // Dispatch custom event for parent components to handle
-      window.dispatchEvent(new CustomEvent('unreadCountUpdate', { detail: data }));
-    });
-
-    return () => {
-      socket.off('receiveMessage', handleReceive);
-      socket.off('messageDelivered', handleMessageDelivered);
-      socket.off('messageRead', handleMessageRead);
-      socket.off('messagesRead', handleMessagesRead);
-      socket.off('unreadCountUpdate');
-    };
-  }, [isOpen, appointmentId, socket]);
-
-  // Check if user is near bottom to show/hide scroll button
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      // Don't show arrow during auto-scroll operations
-      if (isAutoScrolling) return;
-      
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50; // More lenient - show arrow only when recent message is not visible
-      setShowScrollButton(!isAtBottom);
-    };
-
-    // Initial check with a small delay to ensure proper rendering
-    setTimeout(() => {
-      handleScroll();
-    }, 200);
-    
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [liveMessages, isOpen, isAutoScrolling]); // Re-run when messages change or chat opens
-
-  // Auto-scroll to bottom only when opening chat
-  useEffect(() => {
-    if (isOpen && messagesEndRef.current) {
-      setIsAutoScrolling(true);
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        // Reset auto-scroll flag after animation completes
-        setTimeout(() => {
-          setIsAutoScrolling(false);
-        }, 500);
-      }, 150);
-    }
-  }, [isOpen]); // Only trigger when chat opens, not on every message
-
-  // Mark messages as read when chat is opened
-  useEffect(() => {
-    if (isOpen && socket && liveMessages.length > 0) {
-      // Get unread messages that were sent to the current user
-      const unreadMessages = liveMessages.filter(msg => 
-        (msg.sender !== user?._id && msg.sender !== user?.id) && 
-        msg.status !== 'read'
-      );
-      
-      if (unreadMessages.length > 0) {
-        const messageIds = unreadMessages.map(msg => msg._id);
-        socket.emit('markMessagesAsRead', { 
-          messageIds, 
-          appointmentId, 
-          userId: user?._id || user?.id 
-        });
-        // Do NOT reset unread count here anymore
-        // window.dispatchEvent(new CustomEvent('resetUnreadCount', {
-        //   detail: { appointmentId }
-        // }));
-      }
-    }
-  }, [isOpen, socket, liveMessages, user?._id, user?.id, appointmentId]);
-
-  // Join appointment room and reset unread count when chat is opened
-  useEffect(() => {
-    if (isOpen && appointmentId && socket) {
-      socket.emit('joinAppointmentRoom', appointmentId);
-      // Reset unread count in database ONLY when chat is opened
-      socket.emit('resetUnreadCount', { 
-        appointmentId, 
-        userId: user?._id || user?.id 
-      });
-      // Dispatch event to reset unread count in frontend
-      window.dispatchEvent(new CustomEvent('resetUnreadCount', {
-        detail: { appointmentId }
-      }));
-    }
-  }, [isOpen, appointmentId, socket, user?._id, user?.id]);
 
   if (!isOpen) return null;
 
-  const handleSend = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!input.trim() || !socket) return;
-    const msgObj = {
-      sender: user?._id,
-      message: input,
-      time: new Date().toLocaleTimeString(),
-      createdAt: new Date().toISOString(),
-    };
-    
-    socket.emit('sendMessage', { appointmentId, message: msgObj });
-    if (onSendMessage) onSendMessage(input);
+    if (!input.trim()) return;
+    chat.sendText(input);
     setInput('');
-    
-    // Auto-scroll to bottom when sending a message
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 100);
   };
 
-  const handleImageUpload = () => {
-    fileInputRef.current?.click();
-  };
+  const peer = doctor || user;
+  const peerId = peer?._id || peer?.id;
+  const isOnline = peerId && Array.isArray(onlineUsers) && onlineUsers.includes(String(peerId));
 
-  const scrollToBottom = () => {
-    setIsAutoScrolling(true);
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    // Reset auto-scroll flag after animation completes
-    setTimeout(() => {
-      setIsAutoScrolling(false);
-    }, 500);
-  };
-
-  const handleFileSelect = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      alert('Please select a valid image file (JPEG, PNG, GIF, WebP)');
-      return;
-    }
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
-      return;
-    }
-
-    setUploadingImage(true);
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await axios.post(`${SOCKET_URL}/api/chat/upload-image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.data.success) {
-        const msgObj = {
-          sender: user?._id,
-          message: input || '',
-          messageType: 'image',
-          fileUrl: response.data.fileUrl,
-          fileName: response.data.fileName,
-          fileSize: response.data.fileSize,
-          time: new Date().toLocaleTimeString(),
-          createdAt: new Date().toISOString(),
-        };
-        
-        socket.emit('sendMessage', { appointmentId, message: msgObj });
-        setInput('');
-        
-        // Auto-scroll to bottom when sending an image
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }, 100);
-      } else {
-        alert('Failed to upload image');
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Failed to upload image');
-    } finally {
-      setUploadingImage(false);
-      // Clear the input value to allow selecting the same file again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  // --- UI ---
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-gradient-to-br from-blue-50/80 via-white/90 to-purple-100/80 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col h-[80vh] min-h-[400px] relative border border-white/30 backdrop-blur-lg">
-        {/* Scroll to bottom button */}
-        {showScrollButton && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md flex flex-col h-[80vh] min-h-[400px] relative ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
+        {chat.showScrollButton && (
           <button
-            onClick={scrollToBottom}
-            className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20 p-2 bg-gray-800/90 hover:bg-gray-700/90 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+            onClick={chat.scrollToBottom}
+            className="absolute bottom-20 right-4 z-20 w-9 h-9 flex items-center justify-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full shadow-lg ring-1 ring-gray-200 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             title="Scroll to bottom"
+            aria-label="Scroll to bottom"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </button>
         )}
+
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/20 bg-white/30 dark:bg-gray-900/60 rounded-t-2xl backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <img src={doctor?.image || user?.image} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-blue-400 shadow" />
-            <div>
-              <div className="text-gray-900 dark:text-white font-semibold">{doctor?.name || user?.name}</div>
-              <div className="text-blue-700 dark:text-blue-200 text-xs">Appointment Chat</div>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative flex-shrink-0">
+              <img
+                src={peer?.image}
+                alt=""
+                className="w-10 h-10 rounded-full object-cover ring-1 ring-gray-200 dark:ring-gray-700"
+              />
+              {isOnline && (
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-800" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 dark:text-white truncate">{peer?.name}</p>
+              <p className={`text-[11px] font-medium flex items-center gap-1 ${
+                isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-gray-400 dark:bg-gray-500'}`} />
+                {isOnline ? 'Online' : 'Offline'}
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-700 dark:text-white hover:text-blue-600 text-2xl font-bold px-2">&times;</button>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-2xl leading-none"
+            aria-label="Close"
+          >
+            ×
+          </button>
         </div>
+
         {/* Messages */}
-        <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2 bg-transparent">
+        <div ref={chat.messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-1 bg-gray-50 dark:bg-gray-900/40">
           {loading ? (
             <>
               <MessageSkeleton />
               <MessageSkeleton />
               <MessageSkeleton />
             </>
-          ) : liveMessages && liveMessages.length > 0 ? (
-            liveMessages.map((msg, idx) => {
-              const isOwn = msg.sender === user?._id || msg.sender === user?.id;
-              const showDateSeparator = idx === 0 || isDifferentDay(msg.createdAt, liveMessages[idx - 1]?.createdAt);
-              
+          ) : chat.liveMessages.length > 0 ? (
+            chat.liveMessages.map((msg, idx) => {
+              const own = chat.isOwn(msg);
+              const showDateSeparator = idx === 0 || isDifferentDay(msg.createdAt, chat.liveMessages[idx - 1]?.createdAt);
               return (
                 <React.Fragment key={msg._id || idx}>
-                  {/* Date Separator */}
                   {showDateSeparator && (
-                    <div className="flex justify-center my-4">
-                      <div className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-3 py-1 rounded-full">
+                    <div className="flex justify-center my-3">
+                      <div className="bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[11px] font-medium px-3 py-1 rounded-full ring-1 ring-gray-200 dark:ring-gray-700 shadow-sm">
                         {formatDate(msg.createdAt)}
                       </div>
                     </div>
                   )}
-                  
-                  {/* Message */}
-                  <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} w-full`}>
-                    <div className={`px-4 py-2 rounded-2xl max-w-xs break-words shadow-md ${isOwn ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'} ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'}`}>
-                      {/* Text message */}
-                      {msg.message && <p className="text-sm lg:text-base select-none mb-2">{msg.message}</p>}
-                      
-                      {/* Image message */}
+                  <div className={`flex ${own ? 'justify-end' : 'justify-start'} w-full py-0.5`}>
+                    <div className={`px-3.5 py-2 max-w-[75%] break-words ${
+                      own
+                        ? 'bg-primary !text-white rounded-2xl rounded-br-sm shadow-sm'
+                        : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-2xl rounded-bl-sm ring-1 ring-gray-200 dark:ring-gray-600 shadow-sm'
+                    }`}>
                       {msg.messageType === 'image' && msg.fileUrl && (
-                        <div className="max-w-full relative group message-image mb-2">
-                          <div className="relative overflow-hidden rounded-2xl shadow-lg border border-white/10 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm">
-                            <img 
-                              src={msg.fileUrl} 
-                              alt={msg.fileName || "Image"} 
-                              className="w-full h-auto cursor-pointer transition-all duration-300 group-hover:scale-[1.02] group-hover:brightness-110"
-                              onClick={() => window.open(msg.fileUrl, '_blank')}
-                            />
-                            {/* Hover overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </div>
-                        </div>
+                        <img
+                          src={msg.fileUrl}
+                          alt={msg.fileName || ''}
+                          className="max-w-full h-auto rounded-xl ring-1 ring-black/5 cursor-pointer mb-1"
+                          onClick={() => window.open(msg.fileUrl, '_blank')}
+                        />
                       )}
-                      
-                      <div className="text-xs text-right mt-1 opacity-60 flex items-center justify-end gap-1">
+                      {msg.message && <p className={`text-sm leading-snug ${own ? '!text-white' : ''}`}>{msg.message}</p>}
+                      <div className={`text-[10px] mt-1 flex items-center justify-end gap-1 ${
+                        own ? 'text-white/80' : 'text-gray-400 dark:text-gray-500'
+                      }`}>
                         <span>{formatTime(msg.createdAt)}</span>
-                        <MessageStatus status={msg.status} fromMe={isOwn} />
+                        <MessageStatus status={msg.status} fromMe={own} />
                       </div>
                     </div>
                   </div>
@@ -410,48 +178,51 @@ const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, onSen
               );
             })
           ) : (
-            <div className="text-center text-gray-400">No messages yet. Start the conversation!</div>
+            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+              <p className="font-semibold text-gray-700 dark:text-gray-200">No messages yet</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Send a message to start the conversation.</p>
+            </div>
           )}
-          <div ref={messagesEndRef} />
+          <div ref={chat.messagesEndRef} />
         </div>
-        {/* Input */}
+
+        {/* Composer */}
         <form
-          className="flex items-center gap-2 p-4 border-t border-white/20 bg-white/30 dark:bg-gray-900/60 rounded-b-2xl backdrop-blur-md"
-          onSubmit={handleSend}
+          className="flex items-center gap-2 px-3 py-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800"
+          onSubmit={handleSubmit}
         >
-          {/* Image Upload Button */}
           <button
             type="button"
-            onClick={handleImageUpload}
-            disabled={uploadingImage}
-            className="px-3 py-2 bg-gray-200/80 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-700 dark:text-white hover:bg-gray-300/80 dark:hover:bg-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={upload.openPicker}
+            disabled={upload.uploading}
+            className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-gray-500 hover:text-primary hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Attach image"
           >
-            {uploadingImage ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700 dark:border-white"></div>
+            {upload.uploading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-primary" />
             ) : (
-              <FaImage className="text-base lg:text-lg" />
+              <FaImage className="w-4 h-4" />
             )}
           </button>
-          
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-          
+
+          <input ref={upload.fileInputRef} type="file" accept="image/*" className="hidden" onChange={upload.handleFileSelect} />
+
           <input
             type="text"
-            className="flex-1 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 shadow"
-            placeholder="Type your message..."
+            className="flex-1 px-4 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 text-sm transition-colors"
+            placeholder="Type a message…"
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
           />
+
           <button
             type="submit"
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-semibold shadow hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
+            disabled={!input.trim()}
+            className={`flex-shrink-0 px-4 h-10 rounded-full font-semibold text-sm transition-all duration-200 ${
+              input.trim()
+                ? 'bg-primary !text-white shadow-md hover:bg-emerald-500 active:scale-95'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+            }`}
           >
             Send
           </button>
@@ -461,50 +232,4 @@ const ChatBox = ({ isOpen, onClose, appointmentId, user, doctor, messages, onSen
   );
 };
 
-// Message Status Component for WhatsApp-like ticks
-const MessageStatus = ({ status, fromMe }) => {
-  if (!fromMe) return null; // Only show status for sent messages
-
-  const getStatusIcon = () => {
-    switch (status) {
-      case "sent":
-        return (
-          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        );
-      case "delivered":
-        return (
-          <div className="flex items-center">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            <svg className="w-4 h-4 text-white -ml-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </div>
-        );
-      case "read":
-        return (
-          <div className="flex items-center">
-            <svg className="w-4 h-4 text-blue-400 drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            <svg className="w-4 h-4 text-blue-400 drop-shadow-sm -ml-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-1 ml-2">
-      {getStatusIcon()}
-    </div>
-  );
-};
-
-export default ChatBox; 
+export default ChatBox;

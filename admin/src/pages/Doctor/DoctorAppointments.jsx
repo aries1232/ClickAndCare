@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState, useCallback } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
+import { useSocketContext } from "../../context/SocketContext";
 import { assets } from "../../assets/assets.js";
 import DefaultAvatar from '../../components/DefaultAvatar';
 import ChatBox from '../../components/ChatBox.jsx';
@@ -22,7 +23,11 @@ const DoctorAppointments = () => {
     updateUnreadCount,
   } = useContext(DoctorContext);
 
-  const { calculateAge, slotDateFormat, socket } = useContext(AppContext);
+  const { calculateAge, slotDateFormat } = useContext(AppContext);
+  // socket lives in SocketContext, not AppContext (the destructure used to
+  // read `socket` off AppContext where it didn't exist, so the join-rooms
+  // effect below was a silent no-op).
+  const { socket } = useSocketContext() || {};
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);

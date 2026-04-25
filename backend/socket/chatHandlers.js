@@ -25,7 +25,11 @@ export const registerChatHandlers = (io, socket) => {
   if (connectedUserId) socket.join(userRoom(connectedUserId));
 
   socket.on('joinAppointmentRoom', (appointmentId) => {
-    socket.join(appointmentId);
+    if (appointmentId) socket.join(String(appointmentId));
+  });
+
+  socket.on('leaveAppointmentRoom', (appointmentId) => {
+    if (appointmentId) socket.leave(String(appointmentId));
   });
 
   socket.on('sendMessage', async ({ appointmentId, message }) => {
@@ -64,6 +68,7 @@ export const registerChatHandlers = (io, socket) => {
       const message = await updateMessageStatus(messageId, 'delivered');
       if (!message) return;
       io.to(appointmentId).emit('messageDelivered', {
+        appointmentId,
         messageId: message._id,
         deliveredAt: message.deliveredAt,
       });
@@ -77,6 +82,7 @@ export const registerChatHandlers = (io, socket) => {
       const message = await updateMessageStatus(messageId, 'read');
       if (!message) return;
       io.to(appointmentId).emit('messageRead', {
+        appointmentId,
         messageId: message._id,
         readAt: message.readAt,
       });
@@ -90,7 +96,7 @@ export const registerChatHandlers = (io, socket) => {
       const { updatedIds, readAt } = await markManyAsRead(messageIds);
       if (updatedIds.length === 0) return;
 
-      io.to(appointmentId).emit('messagesRead', { messageIds: updatedIds, readAt });
+      io.to(appointmentId).emit('messagesRead', { appointmentId, messageIds: updatedIds, readAt });
 
       if (userId) {
         const conversation = await Conversation.findOne({ appointmentId });

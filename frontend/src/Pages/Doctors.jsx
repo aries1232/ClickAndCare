@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import DoctorCard from "../Components/DoctorCard.jsx";
 import { SPECIALITIES } from "../utils/constants";
@@ -7,7 +7,6 @@ import { SPECIALITIES } from "../utils/constants";
 const Doctors = () => {
   const { speciality } = useParams();
   const { doctors } = useContext(AppContext);
-  const navigate = useNavigate();
   const [filterDoc, setFilterDoc] = useState([]);
   const [selectedSpeciality, setSelectedSpeciality] = useState(speciality || "All");
 
@@ -20,14 +19,13 @@ const Doctors = () => {
     }
   }, [doctors, selectedSpeciality]);
 
+  // Filter is purely client-side — clicking a speciality flips local state
+  // without touching the URL, so React Router doesn't remount the page and
+  // the sidebar stays put. The URL `/doctors/:speciality` is still read on
+  // initial mount via `useParams` so deep links from Home / SpecialityMenu
+  // continue to work.
   const handleSpecialityClick = (s) => {
-    if (s === selectedSpeciality) {
-      setSelectedSpeciality("All");
-      navigate("/doctors");
-      return;
-    }
-    setSelectedSpeciality(s);
-    navigate(s === "All" ? "/doctors" : `/doctors/${s}`);
+    setSelectedSpeciality((prev) => (prev === s ? "All" : s));
   };
 
   return (

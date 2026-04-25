@@ -13,6 +13,7 @@ import MyAppointment from "./Pages/MyAppointment.jsx";
 import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import Navbar from "./Components/Navbar.jsx";
 import Footer from "./Components/Footer";
+import ScrollToTop from "./Components/ScrollToTop.jsx";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Success from "./Pages/Success.jsx";
@@ -30,6 +31,7 @@ const App = () => {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <DarkModeProvider>
         <div className="dark:bg-gray-900 dark:text-white min-h-screen">
+          <ScrollToTop />
           <div className="mx-4 sm:mx-[10%]">
           <ToastContainer />
 
