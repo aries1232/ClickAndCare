@@ -58,6 +58,18 @@ functions:
     events:
       - httpApi: '*'
 
+# API Gateway HTTP API stage-level throttling. Serverless auto-creates the
+# HttpApiStage; we extend it (resources.extensions doesn't conflict with
+# the auto-generated wire-up). Numbers are sized for personal use: 429
+# kicks in around 25 req/sec sustained with up to 50 req/sec bursts.
+resources:
+  extensions:
+    HttpApiStage:
+      Properties:
+        DefaultRouteSettings:
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 25
+
 package:
   individually: false
   excludeDevDependencies: true
