@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 const SecondaryLinkButton = ({ to, children }) => {
   const navigate = useNavigate();
   return (
-    <div className="mt-6">
+    <div className="mt-4">
       <button
+        type="button"
         onClick={() => navigate(to)}
-        className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200"
+        className="w-full bg-white dark:bg-gray-900 ring-1 ring-gray-300 dark:ring-gray-700 text-gray-700 dark:text-gray-200 py-3 px-4 rounded-full font-semibold hover:ring-primary/50 hover:text-primary dark:hover:text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 transition-all duration-200"
       >
         {children}
       </button>

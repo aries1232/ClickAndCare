@@ -9,7 +9,7 @@ import { useLoginForm } from '../hooks/useLoginForm';
 const Login = () => {
   const form = useLoginForm();
   return (
-    <AuthLayout title="Welcome Back" subtitle="Sign in to your account to continue">
+    <AuthLayout title="Welcome back" subtitle="Sign in to manage your appointments and chat with your doctor.">
       <LoginForm {...form} />
       <AuthDivider label="Or continue with" />
       <GoogleAuthButton onSuccess={form.handleGoogleLogin} mode="signin" />
