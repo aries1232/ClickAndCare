@@ -1,8 +1,9 @@
 import React from 'react';
 
-const EmailInput = ({ value, onChange, disabled = false, id = 'email', placeholder = 'Enter your email', className = '' }) => (
+const EmailInput = ({ value, onChange, disabled = false, id = 'email', name = 'email', placeholder = 'Enter your email', className = '' }) => (
   <input
     id={id}
+    name={name}
     type="email"
     placeholder={placeholder}
     value={value}
