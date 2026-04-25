@@ -354,9 +354,10 @@ const bookAppointment = async (req, res) => {
     const newAppointment = new appointmentModel(appointmentData);
     await newAppointment.save();
 
-    // Best-effort confirmation email; failure mustn't roll back the booking.
-    sendAppointmentConfirmation(userData.email, appointmentData, userData.name)
-      .catch((e) => console.error('sendAppointmentConfirmation failed:', e));
+    // NOTE: confirmation email is sent from the Stripe webhook on
+    // `checkout.session.completed`, NOT here. If we send before payment, a
+    // user who bails from Stripe Checkout still gets a "you booked" email,
+    // which is misleading and was being reported as a bug.
 
     res.json({
       success: true,
@@ -561,10 +562,33 @@ const stripeWebhook = async (req, res) => {
     if (event.type === 'checkout.session.completed') {
       const appointmentId = event.data.object.metadata?.appointmentId;
       if (appointmentId) {
-        await appointmentModel.findByIdAndUpdate(appointmentId, {
-          payment: true,
-          lockExpiresAt: null,
-        });
+        // Atomic flip — only the FIRST event delivery succeeds. If Stripe
+        // re-fires the webhook (which it can), the second call returns null
+        // and we skip the email. This is our idempotency guard.
+        const updated = await appointmentModel.findOneAndUpdate(
+          { _id: appointmentId, payment: { $ne: true } },
+          { payment: true, lockExpiresAt: null },
+          { new: true }
+        );
+        if (updated && updated.userData?.email) {
+          // Fire-and-forget — Stripe expects a 2xx within ~30s, so we don't
+          // block the response on SMTP. Failures are logged but don't roll
+          // back the payment state.
+          sendAppointmentConfirmation(
+            updated.userData.email,
+            {
+              userId: updated.userId,
+              docId: updated.docId,
+              slotDate: updated.slotDate,
+              slotTime: updated.slotTime,
+              userData: updated.userData,
+              docData: updated.docData,
+              amount: updated.amount,
+              date: updated.date,
+            },
+            updated.userData.name
+          ).catch((e) => console.error('sendAppointmentConfirmation failed:', e));
+        }
       }
     } else if (event.type === 'checkout.session.expired') {
       const appointmentId = event.data.object.metadata?.appointmentId;
