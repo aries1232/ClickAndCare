@@ -30,11 +30,11 @@ const AppointmentCard = ({ appointment, unreadCount, onCancel, onOpenChat }) => 
 
   return (
     <article className="rounded-2xl bg-white dark:bg-gray-800/60 ring-1 ring-gray-200 dark:ring-gray-700 hover:ring-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 overflow-hidden">
-      <div className="p-5 sm:p-6">
-        <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
+      <div className="p-4 sm:p-6">
+        <div className="flex gap-4 sm:gap-5 lg:gap-6 lg:flex-row flex-col sm:flex-row">
           {/* Doctor photo */}
-          <div className="flex-shrink-0">
-            <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700 bg-gradient-to-br from-primary/10 to-emerald-100 dark:from-primary/10 dark:to-emerald-900/20">
+          <div className="flex-shrink-0 self-center sm:self-start">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700 bg-gradient-to-br from-primary/10 to-emerald-100 dark:from-primary/10 dark:to-emerald-900/20">
               <img
                 className="w-full h-full object-cover"
                 src={appointment.docData.image}
@@ -46,19 +46,19 @@ const AppointmentCard = ({ appointment, unreadCount, onCancel, onOpenChat }) => 
 
           {/* Body */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4">
               <div className="min-w-0">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                <h3 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                   {appointment.docData.name}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-0.5">
                   {appointment.docData.speciality}
                 </p>
               </div>
               <AppointmentStatusBadge appointment={appointment} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Stat
                 icon={HiOutlineCalendar}
                 label="Date & Time"
@@ -81,7 +81,7 @@ const AppointmentCard = ({ appointment, unreadCount, onCancel, onOpenChat }) => 
           </div>
         </div>
 
-        <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-2">
+        <div className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:flex-wrap gap-2">
           <AppointmentActions
             appointment={appointment}
             unreadCount={unreadCount}

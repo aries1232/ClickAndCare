@@ -9,7 +9,10 @@ export default {
       },
     },
     gridTemplateColumns: {
-      auto: "repeat(auto-fill,minmax(200px,1fr))",
+      // Card grid used by DoctorCard / TopDoctor / Doctors page. 160px min
+      // lets two columns sit side-by-side on a ~360px phone, then auto-fills
+      // more columns on larger screens.
+      auto: "repeat(auto-fill,minmax(160px,1fr))",
     },
   },
   plugins: [],

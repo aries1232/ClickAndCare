@@ -4,18 +4,18 @@ import { specialityData } from '../assets/assets.js';
 
 const SpecialityMenu = () => {
   return (
-    <section id="speciality" className="py-16 text-gray-800 dark:text-white">
-      <div className="flex flex-col items-center gap-4">
+    <section id="speciality" className="py-10 sm:py-16 text-gray-800 dark:text-white">
+      <div className="flex flex-col items-center gap-3 sm:gap-4 text-center">
         <p className="inline-block text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
           Specialities
         </p>
-        <h2 className="text-3xl sm:text-4xl font-medium">Find By Speciality</h2>
-        <p className="md:w-2/3 text-center text-sm text-gray-600 dark:text-gray-300">
-          Simply browse through our extensive list of trusted doctors, schedule your appointment hassle-free.
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Find By Speciality</h2>
+        <p className="md:w-2/3 text-sm text-gray-600 dark:text-gray-300">
+          Browse our extensive list of trusted doctors and book hassle-free.
         </p>
       </div>
 
-      <div className="flex sm:justify-center gap-4 pt-8 w-full overflow-x-auto scrollbar-hide">
+      <div className="flex sm:justify-center gap-3 sm:gap-4 pt-6 sm:pt-8 w-full overflow-x-auto scrollbar-hide">
         {specialityData.map((item, index) => (
           <Link
             key={index}

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router-dom';
 import { HiX, HiOutlineUser, HiOutlineCalendar, HiOutlineLogout } from 'react-icons/hi';
 import { assets } from '../../assets/assets.js';
@@ -19,17 +20,20 @@ const MobileMenu = ({ show, setShow, token, userData, totalUnreadCount, onMenuCl
     return () => { document.body.style.overflow = ''; };
   }, [show]);
 
-  return (
-    <div className={`md:hidden fixed inset-0 z-50 ${show ? '' : 'pointer-events-none'}`}>
+  // Portal to <body> so we escape the Navbar's backdrop-blur stacking
+  // context. Without this, the navbar's bg-white/75 ancestor can leak
+  // through the drawer in some browsers, making the menu look transparent.
+  return createPortal(
+    <div className={`md:hidden fixed inset-0 z-[60] ${show ? '' : 'pointer-events-none'}`}>
       <div
         onClick={() => setShow(false)}
-        className={`absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity duration-200 ${
+        className={`absolute inset-0 bg-black/60 backdrop-blur transition-opacity duration-200 ${
           show ? 'opacity-100' : 'opacity-0'
         }`}
       />
 
       <aside
-        className={`absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white dark:bg-gray-900 shadow-2xl flex flex-col transition-transform duration-300 ${
+        className={`absolute top-0 right-0 h-full w-[92%] max-w-sm bg-white dark:bg-gray-900 shadow-2xl flex flex-col transition-transform duration-300 ${
           show ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -118,7 +122,8 @@ const MobileMenu = ({ show, setShow, token, userData, totalUnreadCount, onMenuCl
           )}
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -55,11 +55,11 @@ const About = () => {
   return (
     <div className="pb-24">
       {/* ─── Hero ───────────────────────────────────────────────── */}
-      <section className="pt-12 pb-10 text-center">
+      <section className="pt-8 pb-8 sm:pt-12 sm:pb-10 text-center">
         <p className="inline-block text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
           About Us
         </p>
-        <h1 className="mt-5 text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight">
+        <h1 className="mt-4 sm:mt-5 text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight">
           Healthcare that meets you{" "}
           <span className="text-primary">where you are</span>
         </h1>

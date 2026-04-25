@@ -8,8 +8,8 @@ const TopDoctor = () => {
   const { doctors } = useContext(AppContext);
 
   return (
-    <section className="py-16">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
+    <section className="py-10 sm:py-16">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-10">
         <div>
           <p className="inline-block text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
             Top Rated
@@ -25,14 +25,14 @@ const TopDoctor = () => {
         <Link
           to="/doctors"
           onClick={() => window.scrollTo(0, 0)}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all duration-200"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all duration-200 self-start sm:self-end"
         >
           View all doctors
           <HiOutlineArrowRight className="w-4 h-4" />
         </Link>
       </div>
 
-      <div className="w-full grid grid-cols-auto gap-4 gap-y-6">
+      <div className="w-full grid grid-cols-auto gap-3 sm:gap-4 gap-y-5 sm:gap-y-6">
         {doctors.slice(0, 10).map((doctor) => (
           <DoctorCard key={doctor._id} doctor={doctor} />
         ))}
