@@ -10,6 +10,18 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 5173,
+      // Allow LAN access (so phones on the same Wi-Fi can hit the dev
+      // server) and tunnels (ngrok / cloudflared) — Vite v5 blocks unknown
+      // Host headers by default. ".ngrok-free.app" matches any subdomain.
+      host: true,
+      allowedHosts: [
+        "localhost",
+        ".ngrok-free.app",
+        ".ngrok.io",
+        ".ngrok.app",
+        ".trycloudflare.com",
+        ".loca.lt",
+      ],
       proxy: {
         "/api": {
           target: backendUrl,

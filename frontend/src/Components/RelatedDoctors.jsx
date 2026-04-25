@@ -40,7 +40,7 @@ const RelatedDoctors = ({ speciality, docId }) => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-auto gap-4 gap-y-6">
+      <div className="grid grid-cols-3 sm:grid-cols-auto gap-2 sm:gap-4 gap-y-3 sm:gap-y-6">
         {relDoc.slice(0, 6).map((doctor) => (
           <DoctorCard key={doctor._id} doctor={doctor} />
         ))}

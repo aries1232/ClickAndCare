@@ -10,7 +10,7 @@ const Spinner = () => (
 );
 
 const baseClass =
-  'inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-full transition-all duration-200';
+  'inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200';
 
 const ReceiptButton = ({ appointmentId }) => {
   const { state, start, download } = useReceiptDownload(appointmentId);

@@ -24,18 +24,18 @@ const MyProfile = () => {
   const userData = withDefaults(editor.userData);
 
   return (
-    <div className="pb-16">
-      <div className="mb-6 mt-2">
+    <div className="pb-12 sm:pb-16">
+      <div className="mb-4 sm:mb-6 mt-1 sm:mt-2">
         <p className="inline-block text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
           Account
         </p>
-        <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">My Profile</h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <h1 className="mt-2 sm:mt-3 text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
           Manage your personal information and account settings.
         </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm">
         <ProfileHeader
           userData={userData}
           setUserData={editor.setUserData}
@@ -49,8 +49,8 @@ const MyProfile = () => {
           onLogout={editor.handleLogout}
         />
 
-        <div className="p-6 sm:p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+        <div className="p-4 sm:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-10">
             <ContactInfoSection userData={userData} setUserData={editor.setUserData} isEdit={editor.isEdit} />
             <PersonalInfoSection userData={userData} setUserData={editor.setUserData} isEdit={editor.isEdit} />
           </div>

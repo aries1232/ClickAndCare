@@ -16,6 +16,15 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5176,
+      host: true,
+      allowedHosts: [
+        'localhost',
+        '.ngrok-free.app',
+        '.ngrok.io',
+        '.ngrok.app',
+        '.trycloudflare.com',
+        '.loca.lt',
+      ],
       proxy: {
         '/api': { target: backendUrl, changeOrigin: true, ws: true },
         '/socket.io': { target: backendUrl, changeOrigin: true, ws: true },

@@ -8,7 +8,7 @@ import { isValidOtp } from '../../utils/validators';
 
 const Field = ({ id, label, children }) => (
   <div>
-    <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+    <label htmlFor={id} className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-1.5">
       {label}
     </label>
     {children}
@@ -17,8 +17,8 @@ const Field = ({ id, label, children }) => (
 
 const NameInput = ({ value, onChange }) => (
   <div className="relative">
-    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400 dark:text-gray-500 pointer-events-none">
-      <HiOutlineUser className="w-5 h-5" />
+    <span className="absolute inset-y-0 left-0 pl-3 sm:pl-3.5 flex items-center text-gray-400 dark:text-gray-500 pointer-events-none">
+      <HiOutlineUser className="w-4 h-4 sm:w-5 sm:h-5" />
     </span>
     <input
       id="name"
@@ -28,7 +28,7 @@ const NameInput = ({ value, onChange }) => (
       value={value}
       onChange={onChange}
       required
-      className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200 outline-none bg-white dark:bg-gray-900 dark:text-white"
+      className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200 outline-none bg-white dark:bg-gray-900 dark:text-white"
     />
   </div>
 );

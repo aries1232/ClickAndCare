@@ -31,7 +31,7 @@ const handlePick = (e, setImage) => {
 const EditPicker = ({ image, userData, setImage }) => (
   <label className="cursor-pointer group">
     <div className="relative">
-      <div className="w-28 h-28 md:w-36 md:h-36 rounded-full ring-4 ring-white/40 shadow-2xl overflow-hidden bg-white">
+      <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full ring-2 sm:ring-4 ring-white/40 shadow-xl sm:shadow-2xl overflow-hidden bg-white">
         {image ? (
           <img className="w-full h-full object-cover" src={URL.createObjectURL(image)} alt="Profile" />
         ) : userData?.image ? (
@@ -56,9 +56,9 @@ const EditPicker = ({ image, userData, setImage }) => (
 
 const ActionButtons = ({ isEdit, isSaving, onSave, onCancel, onStartEdit, onLogout }) => {
   const baseSolid =
-    'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm shadow-md hover:shadow-lg active:scale-[0.98] transition-all duration-200';
+    'inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm shadow-md hover:shadow-lg active:scale-[0.98] transition-all duration-200';
   const baseGhost =
-    'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200';
+    'inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200';
 
   if (isEdit) {
     return (
@@ -112,43 +112,43 @@ const ActionButtons = ({ isEdit, isSaving, onSave, onCancel, onStartEdit, onLogo
 };
 
 const ProfileHeader = ({ userData, setUserData, isEdit, image, setImage, isSaving, onSave, onCancel, onStartEdit, onLogout }) => (
-  <div className="relative overflow-hidden bg-gradient-to-br from-primary via-emerald-500 to-teal-600 px-6 sm:px-8 py-10 md:py-12 text-white">
+  <div className="relative overflow-hidden bg-gradient-to-br from-primary via-emerald-500 to-teal-600 px-5 sm:px-8 py-6 sm:py-10 md:py-12 text-white">
     {/* Decorative blobs */}
     <div className="absolute -top-20 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
     <div className="absolute -bottom-24 -left-10 w-72 h-72 bg-emerald-200/20 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
 
-    <div className="relative flex flex-col md:flex-row items-center gap-6 md:gap-8">
-      <div className="relative">
+    <div className="relative flex flex-row md:flex-row items-center gap-4 sm:gap-6 md:gap-8">
+      <div className="relative flex-shrink-0">
         {isEdit ? (
           <EditPicker image={image} userData={userData} setImage={setImage} />
         ) : (
           <div className="relative">
-            <div className="w-28 h-28 md:w-36 md:h-36 rounded-full ring-4 ring-white/40 shadow-2xl overflow-hidden bg-white">
-              <ProfileImage user={userData} size="w-28 h-28 md:w-36 md:h-36" />
+            <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-full ring-2 sm:ring-4 ring-white/40 shadow-xl sm:shadow-2xl overflow-hidden bg-white">
+              <ProfileImage user={userData} size="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36" />
             </div>
-            <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-400 ring-4 ring-white" />
+            <span className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1 w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-emerald-400 ring-2 sm:ring-4 ring-white" />
           </div>
         )}
       </div>
 
-      <div className="flex-1 text-center md:text-left w-full">
-        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-white/80 mb-2">
+      <div className="flex-1 min-w-0 text-left md:text-left w-full">
+        <p className="text-[10px] sm:text-xs font-semibold tracking-[0.18em] uppercase text-white/80 mb-1 sm:mb-2">
           Patient Account
         </p>
         {isEdit ? (
           <input
-            className="bg-white/15 backdrop-blur-sm text-2xl md:text-3xl font-bold text-white placeholder-white/70 ring-1 ring-white/30 rounded-lg px-4 py-2 w-full max-w-md focus:outline-none focus:ring-2 focus:ring-white/60"
+            className="bg-white/15 backdrop-blur-sm text-base sm:text-2xl md:text-3xl font-bold text-white placeholder-white/70 ring-1 ring-white/30 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 w-full max-w-md focus:outline-none focus:ring-2 focus:ring-white/60"
             type="text"
             value={userData.name}
             onChange={(e) => setUserData((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Enter your name"
           />
         ) : (
-          <h2 className="text-2xl md:text-4xl font-bold tracking-tight">{userData.name}</h2>
+          <h2 className="text-lg sm:text-2xl md:text-4xl font-bold tracking-tight truncate">{userData.name}</h2>
         )}
-        <p className="mt-2 text-sm text-white/80">{userData.email}</p>
+        <p className="mt-0.5 sm:mt-2 text-xs sm:text-sm text-white/80 truncate">{userData.email}</p>
 
-        <div className="mt-5 flex flex-col sm:flex-row gap-3 items-center md:items-start justify-center md:justify-start">
+        <div className="hidden sm:flex mt-5 flex-col sm:flex-row gap-3 items-start justify-start">
           <ActionButtons
             isEdit={isEdit}
             isSaving={isSaving}
@@ -159,6 +159,18 @@ const ProfileHeader = ({ userData, setUserData, isEdit, image, setImage, isSavin
           />
         </div>
       </div>
+    </div>
+
+    {/* Mobile-only action buttons (full-width below the avatar+name row) */}
+    <div className="sm:hidden relative mt-4 flex flex-col gap-2">
+      <ActionButtons
+        isEdit={isEdit}
+        isSaving={isSaving}
+        onSave={onSave}
+        onCancel={onCancel}
+        onStartEdit={onStartEdit}
+        onLogout={onLogout}
+      />
     </div>
   </div>
 );

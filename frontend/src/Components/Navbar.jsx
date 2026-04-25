@@ -18,7 +18,7 @@ const Navbar = () => {
           className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-md"
           aria-label="ClickAndCare home"
         >
-          <img src={assets.logo} alt="ClickAndCare" className="h-20 w-auto" />
+          <img src={assets.logo} alt="ClickAndCare" className="h-16 sm:h-16 lg:h-20 w-auto" />
         </button>
 
         <NavLinks />
@@ -27,14 +27,20 @@ const Navbar = () => {
           <DarkModeToggle />
 
           {nav.token && nav.userData ? (
-            <UserMenu
-              userData={nav.userData}
-              totalUnreadCount={nav.totalUnreadCount}
-              show={nav.showUserMenu}
-              setShow={nav.setShowUserMenu}
-              onMenuClick={nav.handleUserMenuClick}
-              onLogout={nav.logout}
-            />
+            // Avatar dropdown is desktop-only. On mobile the same options
+            // (My Profile / My Appointments / Logout) live inside the
+            // hamburger drawer, so we hide the redundant avatar here to
+            // keep the mobile navbar clean.
+            <div className="hidden md:block">
+              <UserMenu
+                userData={nav.userData}
+                totalUnreadCount={nav.totalUnreadCount}
+                show={nav.showUserMenu}
+                setShow={nav.setShowUserMenu}
+                onMenuClick={nav.handleUserMenuClick}
+                onLogout={nav.logout}
+              />
+            </div>
           ) : (
             <button
               onClick={nav.goToLogin}
@@ -46,10 +52,10 @@ const Navbar = () => {
 
           <button
             onClick={() => nav.setShowMenu(true)}
-            className="md:hidden p-2 -mr-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-full ring-1 ring-gray-300 dark:ring-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:ring-primary/40 transition-colors"
             aria-label="Open menu"
           >
-            <HiOutlineMenuAlt3 className="w-6 h-6" />
+            <HiOutlineMenuAlt3 className="w-5 h-5" />
           </button>
 
           <MobileMenu

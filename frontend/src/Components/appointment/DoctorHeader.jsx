@@ -28,7 +28,7 @@ const DoctorHeader = ({ docInfo }) => {
     <section className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 mt-4">
       {/* ─── Doctor photo ─────────────────────────── */}
       <div className="relative">
-        <div className="aspect-[4/5] w-full max-w-xs mx-auto md:mx-0 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-emerald-200/30 dark:from-primary/10 dark:to-emerald-900/20 ring-1 ring-gray-200 dark:ring-gray-700">
+        <div className="aspect-[4/5] w-full max-w-[200px] sm:max-w-xs mx-auto md:mx-0 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-emerald-200/30 dark:from-primary/10 dark:to-emerald-900/20 ring-1 ring-gray-200 dark:ring-gray-700">
           <img
             src={docInfo.image}
             alt={docInfo.name}
@@ -46,9 +46,9 @@ const DoctorHeader = ({ docInfo }) => {
       </div>
 
       {/* ─── Doctor info ──────────────────────────── */}
-      <div className="rounded-2xl p-6 sm:p-8 bg-white dark:bg-gray-800/60 ring-1 ring-gray-200 dark:ring-gray-700">
+      <div className="rounded-2xl p-5 sm:p-8 bg-white dark:bg-gray-800/60 ring-1 ring-gray-200 dark:ring-gray-700">
         <div className="flex items-start gap-3 flex-wrap">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             {docInfo.name}
           </h1>
           <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-full">
