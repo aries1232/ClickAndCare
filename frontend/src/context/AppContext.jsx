@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from "react";
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { getDoctors as getDoctorsApi } from '../services/doctorApi';
 import { getUserProfile } from '../services/userApi';
 

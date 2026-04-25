@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { forgotPassword, resetPassword } from '../services/authApi';
 import { isValidPassword, passwordsMatch } from '../utils/validators';
 

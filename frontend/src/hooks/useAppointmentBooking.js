@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { loadStripe } from '@stripe/stripe-js';
 import { AppContext } from '../context/AppContext';
 import {
@@ -30,7 +30,7 @@ export const useAppointmentBooking = () => {
   // appointment row is created, we cancel it so the slot frees instantly.
   const bookAppointment = async () => {
     if (!token) {
-      toast.warn('Login to book appointment');
+      toast.warning('Login to book appointment');
       return navigate('/login');
     }
     if (!slotTime) {

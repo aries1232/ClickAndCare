@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { registerUser, verifyOtp, googleLogin as googleLoginApi } from '../services/authApi';
 import { decodeGoogleJwt } from '../utils/googleAuthUtils';
 import { isValidPassword, isValidOtp } from '../utils/validators';

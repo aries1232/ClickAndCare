@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { uploadChatImage } from '../services/chatApi';
 import { validateImageFile } from '../utils/validators';
 

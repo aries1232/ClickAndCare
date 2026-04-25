@@ -14,12 +14,40 @@ import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import Navbar from "./Components/Navbar.jsx";
 import Footer from "./Components/Footer";
 import ScrollToTop from "./Components/ScrollToTop.jsx";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Toaster } from 'sonner';
 import Success from "./Pages/Success.jsx";
 import Cancel from "./Pages/Cancel.jsx";
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { DarkModeProvider } from "./context/DarkModeContext";
+import { DarkModeProvider, useDarkMode } from "./context/DarkModeContext";
+
+// Sonner Toaster needs to read dark-mode state, so it lives in a child of
+// DarkModeProvider (calling useDarkMode at the App level would fail because
+// App *renders* the provider — it isn't a descendant of it).
+const AppToaster = () => {
+  const { isDarkMode } = useDarkMode();
+  return (
+    <Toaster
+      position="bottom-right"
+      closeButton
+      duration={3500}
+      theme="dark"
+      toastOptions={{
+        classNames: {
+          toast: '!bg-gray-900 !text-white !border !border-gray-700 !shadow-2xl',
+          title: '!text-white !font-semibold',
+          description: '!text-gray-300',
+          actionButton: '!bg-primary !text-white',
+          cancelButton: '!bg-gray-700 !text-gray-200',
+          closeButton: '!bg-gray-800 !text-gray-300 !border-gray-700',
+          success: '![--success-bg:rgb(17,24,39)] ![--success-text:rgb(52,211,153)] ![--success-border:rgb(55,65,81)]',
+          error: '![--error-bg:rgb(17,24,39)] ![--error-text:rgb(248,113,113)] ![--error-border:rgb(55,65,81)]',
+          warning: '![--warning-bg:rgb(17,24,39)] ![--warning-text:rgb(251,191,36)] ![--warning-border:rgb(55,65,81)]',
+          info: '![--info-bg:rgb(17,24,39)] ![--info-text:rgb(96,165,250)] ![--info-border:rgb(55,65,81)]',
+        },
+      }}
+    />
+  );
+};
 
 const App = () => {
   const location = useLocation();
@@ -33,7 +61,7 @@ const App = () => {
         <div className="dark:bg-gray-900 dark:text-white min-h-screen">
           <ScrollToTop />
           <div className="mx-4 sm:mx-[10%]">
-          <ToastContainer />
+          <AppToaster />
 
           {/* Show Navbar only if not on Login/Register pages */}
           {!hideNavbarFooter && <Navbar />}
