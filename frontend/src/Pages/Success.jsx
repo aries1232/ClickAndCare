@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { AppContext } from '../context/AppContext.jsx';
 import { verifyPayment } from '../services/appointmentApi';
 
@@ -14,7 +14,7 @@ const Success = () => {
 
   useEffect(() => {
     if (!sessionId) {
-      toast.warn('Missing payment session.');
+      toast.warning('Missing payment session.');
       navigate('/');
       return;
     }

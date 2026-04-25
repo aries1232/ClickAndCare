@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { AppContext } from '../context/AppContext';
 import { useSocketContext } from '../context/SocketContext';
 import {

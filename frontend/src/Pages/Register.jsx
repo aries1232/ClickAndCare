@@ -9,7 +9,7 @@ import { useRegisterFlow } from '../hooks/useRegisterFlow';
 const Register = () => {
   const flow = useRegisterFlow();
   return (
-    <AuthLayout title="Create Account" subtitle="Join Click&Care to book appointments with top doctors">
+    <AuthLayout title="Create your account" subtitle="Join Click&Care and start booking with top specialists in seconds.">
       <RegisterForm {...flow} />
       <AuthDivider label="Or sign up with" />
       <GoogleAuthButton onSuccess={flow.handleGoogleSignup} mode="signup" />

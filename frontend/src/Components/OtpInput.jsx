@@ -17,7 +17,7 @@ const OtpInput = ({ value, onChange, disabled = false, placeholder = 'Enter 6-di
       value={value}
       onChange={handleChange}
       disabled={disabled}
-      className={`flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 outline-none bg-white text-center text-lg tracking-widest ${className}`}
+      className={`w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200 outline-none bg-white dark:bg-gray-900 dark:text-white text-center text-lg font-semibold tracking-[0.5em] ${className}`}
     />
   );
 };

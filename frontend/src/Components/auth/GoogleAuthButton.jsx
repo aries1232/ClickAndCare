@@ -1,6 +1,6 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 const GoogleAuthButton = ({ onSuccess, mode = 'signin' }) => (
   <div className="mt-6 flex justify-center">

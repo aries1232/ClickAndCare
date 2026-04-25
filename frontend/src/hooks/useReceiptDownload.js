@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { AppContext } from '../context/AppContext';
 import { requestReceipt, getReceiptStatus } from '../services/appointmentApi';
 

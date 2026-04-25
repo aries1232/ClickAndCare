@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { AppContext } from '../context/AppContext';
 import { loginUser, googleLogin as googleLoginApi } from '../services/authApi';
 import { decodeGoogleJwt } from '../utils/googleAuthUtils';
