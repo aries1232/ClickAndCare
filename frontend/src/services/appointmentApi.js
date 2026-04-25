@@ -39,3 +39,25 @@ export const releaseLock = async (token, { appointmentId }) => {
   const { data } = await axios.post('/api/user/release-lock', { appointmentId }, authHeader(token));
   return data;
 };
+
+// Kick off (or short-circuit) receipt generation for a paid appointment.
+// Backend proxies to fileweaver. Returns either:
+//   { success:true, ready:true,  downloadUrl }   ← already generated
+//   { success:true, ready:false, jobId }         ← in progress, poll status
+export const requestReceipt = async (token, appointmentId) => {
+  const { data } = await axios.post(
+    `/api/user/appointments/${appointmentId}/receipt`,
+    {},
+    authHeader(token),
+  );
+  return data;
+};
+
+// Poll for completion. Returns { ready: bool, status, downloadUrl? }.
+export const getReceiptStatus = async (token, appointmentId, jobId) => {
+  const { data } = await axios.get(
+    `/api/user/appointments/${appointmentId}/receipt/status`,
+    { params: { jobId }, ...authHeader(token) },
+  );
+  return data;
+};
