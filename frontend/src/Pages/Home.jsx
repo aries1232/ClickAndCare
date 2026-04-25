@@ -5,10 +5,14 @@ import {
   HiOutlineCalendar,
   HiOutlineChatAlt2,
   HiOutlineArrowRight,
+  HiOutlineLockClosed,
+  HiOutlineShieldCheck,
+  HiOutlineCreditCard,
 } from 'react-icons/hi';
 import Header from '../Components/Header.jsx';
 import SpecialityMenu from '../Components/SpecialityMenu.jsx';
 import TopDoctor from '../Components/TopDoctor.jsx';
+import { assets } from '../assets/assets.js';
 
 const STEPS = [
   {
@@ -66,6 +70,85 @@ const HowItWorks = () => (
   </section>
 );
 
+const PaymentTrust = () => (
+  <section className="py-16">
+    <div className="rounded-3xl bg-white dark:bg-gray-800/60 ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr]">
+        {/* Left: copy */}
+        <div className="p-8 sm:p-10 lg:p-12">
+          <p className="inline-block text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
+            Payments
+          </p>
+          <h2 className="mt-4 text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+            Pay securely with{' '}
+            <span className="inline-block align-middle bg-[#635bff] rounded-md px-2 py-1 ml-1">
+              <img src={assets.stripe_logo} alt="Stripe" className="h-6 sm:h-7 w-auto brightness-0 invert" />
+            </span>
+          </h2>
+          <p className="mt-4 text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed max-w-xl">
+            All consultation fees are processed through{' '}
+            <span className="font-semibold text-gray-900 dark:text-white">Stripe</span> — the same
+            payments platform trusted by Amazon, Shopify and Google. Your card details never touch
+            our servers; everything is encrypted and PCI-compliant end-to-end.
+          </p>
+
+          <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <li className="flex items-start gap-3">
+              <span className="w-9 h-9 flex-shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <HiOutlineLockClosed className="w-5 h-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">256-bit encryption</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Bank-grade TLS in transit</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="w-9 h-9 flex-shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <HiOutlineShieldCheck className="w-5 h-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">PCI-DSS Level 1</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Highest payment standard</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="w-9 h-9 flex-shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <HiOutlineCreditCard className="w-5 h-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Cards & UPI</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Visa · Mastercard · UPI · GPay</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="w-9 h-9 flex-shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <HiOutlineArrowRight className="w-5 h-5 -rotate-45" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Instant receipts</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Downloadable PDFs by email</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        {/* Right: Stripe brand panel */}
+        <div className="relative bg-gradient-to-br from-[#635bff] to-[#7a73ff] flex items-center justify-center p-10 min-h-[260px] overflow-hidden">
+          <div className="absolute -top-24 -right-16 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+          <div className="relative text-center text-white">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-white/85">Powered by</p>
+            <img src={assets.stripe_logo} alt="Stripe" className="mt-3 h-10 sm:h-12 w-auto brightness-0 invert mx-auto" />
+            <p className="mt-5 text-sm text-white/90 max-w-xs mx-auto">
+              Trusted by millions of businesses to handle billions in payments — securely.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 const FinalCta = () => (
   <section className="my-12 rounded-2xl bg-gradient-to-br from-primary to-emerald-500 text-white px-6 py-10 sm:px-12 sm:py-14 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left shadow-xl shadow-primary/20">
     <div>
@@ -91,6 +174,7 @@ const Home = () => (
     <SpecialityMenu />
     <HowItWorks />
     <TopDoctor />
+    <PaymentTrust />
     <FinalCta />
   </div>
 );

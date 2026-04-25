@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiOutlineArrowRight, HiOutlineSearch } from 'react-icons/hi';
+import { HiOutlineArrowRight, HiOutlineSearch, HiOutlineLockClosed } from 'react-icons/hi';
 import { assets } from '../assets/assets.js';
 
 const Header = () => {
@@ -56,11 +56,23 @@ const Header = () => {
           </div>
 
           {/* Trust strip */}
-          <div className="mt-8 flex items-center gap-3">
-            <img src={assets.group_profiles} alt="" className="h-9 w-auto" />
-            <p className="text-xs sm:text-sm text-white/85">
-              <span className="font-semibold text-white">50,000+ patients</span> already booked with us
-            </p>
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex items-center gap-3">
+              <img src={assets.group_profiles} alt="" className="h-9 w-auto" />
+              <p className="text-xs sm:text-sm text-white/85">
+                <span className="font-semibold text-white">50,000+ patients</span> booked with us
+              </p>
+            </div>
+            <div className="hidden sm:block w-px h-8 bg-white/25" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm text-white/85">
+              <HiOutlineLockClosed className="w-4 h-4 text-white/85" />
+              <span>Secure payments by</span>
+              <img
+                src={assets.stripe_logo}
+                alt="Stripe"
+                className="h-5 w-auto bg-white/95 rounded px-1.5 py-0.5 shadow-sm"
+              />
+            </div>
           </div>
         </div>
 
