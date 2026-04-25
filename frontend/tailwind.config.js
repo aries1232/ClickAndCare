@@ -9,9 +9,10 @@ export default {
       },
     },
     gridTemplateColumns: {
-      // Card grid used by DoctorCard / TopDoctor / Doctors page. 160px min
-      // lets two columns sit side-by-side on a ~360px phone, then auto-fills
-      // more columns on larger screens.
+      // Card grid used by DoctorCard on tablet+. 160px floor matches the
+      // original desktop layout. Mobile uses an explicit `grid-cols-3` on
+      // the parent (see Doctors.jsx / TopDoctor.jsx) to guarantee 3-up
+      // tiles without affecting desktop column counts.
       auto: "repeat(auto-fill,minmax(160px,1fr))",
     },
   },

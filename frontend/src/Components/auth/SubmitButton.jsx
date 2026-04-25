@@ -12,7 +12,7 @@ const SubmitButton = ({ loading, disabled, loadingText, children, type = 'submit
     type={type}
     onClick={onClick}
     disabled={loading || disabled}
-    className="w-full inline-flex items-center justify-center bg-primary !text-white py-3 px-4 rounded-full font-semibold shadow-md shadow-primary/30 hover:bg-emerald-500 hover:shadow-lg hover:shadow-primary/40 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none"
+    className="w-full inline-flex items-center justify-center bg-primary !text-white py-2.5 sm:py-3 px-4 text-sm sm:text-base rounded-full font-semibold shadow-md shadow-primary/30 hover:bg-emerald-500 hover:shadow-lg hover:shadow-primary/40 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none"
   >
     {loading ? <><Spinner />{loadingText || 'Loading…'}</> : children}
   </button>

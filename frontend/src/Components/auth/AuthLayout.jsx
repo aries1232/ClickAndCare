@@ -58,28 +58,29 @@ const AuthLayout = ({ title, subtitle, children }) => (
     </aside>
 
     {/* ─── Right: form panel ──────────────────────────── */}
-    <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
+    <main className="flex-1 flex items-start sm:items-center justify-center pt-6 px-3 pb-6 sm:p-8">
       <div className="w-full max-w-md">
-        {/* Mobile-only logo (hidden on lg where the brand panel shows it) */}
-        <div className="lg:hidden text-center mb-6">
+        {/* Tablet-only logo: hidden on phones (cleaner mobile auth form) and
+            on lg+ where the side brand panel already shows the logo. */}
+        <div className="hidden sm:block lg:hidden text-center mb-6">
           <Link to="/" className="inline-block">
-            <img src={logo} alt="Click&Care" className="h-14 w-auto mx-auto" />
+            <img src={logo} alt="Click&Care" className="h-20 w-auto mx-auto" />
           </Link>
         </div>
 
-        <div className="text-center lg:text-left mb-6">
-          <p className="inline-block text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">
+        <div className="text-center lg:text-left mb-4 sm:mb-6">
+          <p className="inline-block text-[10px] sm:text-xs font-semibold tracking-[0.18em] text-primary uppercase bg-primary/10 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
             Account
           </p>
-          <h1 className="mt-3 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="mt-2 sm:mt-3 text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{subtitle}</p>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">{subtitle}</p>
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800/60 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 sm:p-8">
+        <div className="bg-white dark:bg-gray-800/60 rounded-xl sm:rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-4 sm:p-8">
           {children}
         </div>
       </div>

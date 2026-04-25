@@ -5,7 +5,7 @@ import SubmitButton from './SubmitButton.jsx';
 
 const Field = ({ id, label, children }) => (
   <div>
-    <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+    <label htmlFor={id} className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-1.5">
       {label}
     </label>
     {children}
@@ -13,7 +13,7 @@ const Field = ({ id, label, children }) => (
 );
 
 const LoginForm = ({ email, setEmail, password, setPassword, loading, handleSubmit, goToForgotPassword }) => (
-  <form onSubmit={handleSubmit} className="space-y-5">
+  <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-5">
     <Field id="email" label="Email Address">
       <EmailInput value={email} onChange={(e) => setEmail(e.target.value)} />
     </Field>
