@@ -4,7 +4,7 @@ A seamless doctor appointment booking platform designed to make healthcare acces
 
 ## 🌐 Live Demo
 
-**Website:** https://click-and-care.onrender.com/
+**Website:** https://www.chikitsalaya.live/
 
 **Demo Video:** https://drive.google.com/file/d/1TF8maPpVmHNe7fimOnMwRH7kRJUskbMU/view?pli=1
 
